@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 import argparse
+import os
+import pandas as pd
 from sklearn.model_selection import train_test_split
 from flyai.framework import FlyAI
 from flyai.data_helper import DataHelper
 from flyai.utils import remote_helper
 from customer_layers import *
 from path import MODEL_PATH, DATA_PATH
+import torch
 
-'''
+"""
 此项目为FlyAI2.0新版本框架，数据读取，评估方式与之前不同
 2.0框架不再限制数据如何读取
 样例代码仅供参考学习，可以自己修改实现逻辑。
@@ -17,7 +20,7 @@ from path import MODEL_PATH, DATA_PATH
 学习资料可查看文档中心：https://doc.flyai.com/
 常见问题：https://doc.flyai.com/question.html
 遇到问题不要着急，添加小姐姐微信，扫描项目里面的：FlyAI小助手二维码-小姐姐在线解答您的问题.png
-'''
+"""
 
 # 项目的超参，不使用可以删除
 parser = argparse.ArgumentParser()
@@ -27,9 +30,9 @@ args = parser.parse_args()
 
 
 class Main(FlyAI):
-    '''
+    """
     项目中必须继承FlyAI类，否则线上运行会报错。
-    '''
+    """
     def download_data(self):
         # 下载数据
         data_helper = DataHelper()
@@ -39,10 +42,10 @@ class Main(FlyAI):
         print('=*=数据下载完成=*=')
 
     def deal_with_data(self):
-        '''
+        """
         处理数据，没有可不写。
         :return:
-        '''
+        """
         # 加载数据
         self.data = pd.read_csv(os.path.join(DATA_PATH, 'TextSQL/train.csv'))
         # 划分训练集、测试集
