@@ -61,10 +61,12 @@ class Main(FlyAI):
         sql_data, table_data = self.train_data.sql_data.to_list(), self.train_data.table_data.to_list()
         sql_data = [eval(i) for i in sql_data]
         table_data = [eval(i) for i in table_data]
+        table_data = dict(zip([i['id'] for i in table_data], table_data))
 
         val_sql_data, val_table_data = self.valid_data.sql_data.to_list(), self.valid_data.table_data.to_list()
         val_sql_data = [eval(i) for i in val_sql_data]
         val_table_data = [eval(i) for i in val_table_data]
+        val_table_data = dict(zip([i['id'] for i in val_table_data], val_table_data))
 
         grammar = semQL.Grammar()
         model = IRNet(args, grammar)
@@ -95,7 +97,7 @@ class Main(FlyAI):
 
             model.load_state_dict(pretrained_modeled)
 
-        model.word_emb = utils.load_word_emb(args.glove_embed_path)
+        # model.word_emb = utils.load_word_emb(args.glove_embed_path)
         # begin train
 
         model_save_path = utils.init_log_checkpoint_path(args)

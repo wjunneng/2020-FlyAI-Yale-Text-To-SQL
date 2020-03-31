@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from flyai.framework import FlyAI
 from flyai.data_helper import DataHelper
 from flyai.utils import remote_helper
-from customer_layers import *
+from customer import *
 from path import MODEL_PATH, DATA_PATH
 import torch
 

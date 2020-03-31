@@ -109,33 +109,43 @@ def schema_linking(question_arg, question_arg_type, one_hot_type, col_set_type, 
 
 def process(sql, table):
     process_dict = {}
-
-    origin_sql = sql['question_toks']
-    table_names = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in table['table_names']]
+    table_names = [[table['name']]]  # 注意
 
     sql['pre_sql'] = copy.deepcopy(sql)
 
-    tab_cols = [col[1] for col in table['column_names']]
-    tab_ids = [col[0] for col in table['column_names']]
-
-    col_set_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in sql['col_set']]
-    col_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(" ")] for x in tab_cols]
-    q_iter_small = [wordnet_lemmatizer.lemmatize(x).lower() for x in origin_sql]
-    question_arg = copy.deepcopy(sql['question_arg'])
-    question_arg_type = sql['question_arg_type']
-    one_hot_type = np.zeros((len(question_arg_type), 6))
-
+    col_set_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x] for x in table['header_tok']]
     col_set_type = np.zeros((len(col_set_iter), 4))
+    q_iter_small = [wordnet_lemmatizer.lemmatize(x).lower() for x in sql['question_tok']]
+    question_arg = [[i] for i in q_iter_small]
 
+    question_arg_type = [['NONE'] if i == '' else i for i in sql['question_tok_space']]
+    one_hot_type = np.zeros((len(question_arg_type), 6))
+    tab_cols = []
+    tab_ids = []
+    for index in range(len(table['header_tok'])):
+        tab_cols.append(table['header_tok'][index])
+        tab_ids.append(index)
+    col_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x] for x in tab_cols]
+
+    # 存在
     process_dict['col_set_iter'] = col_set_iter
+    # 存在
     process_dict['q_iter_small'] = q_iter_small
+    # 存在
     process_dict['col_set_type'] = col_set_type
+    # 存在
     process_dict['question_arg'] = question_arg
+    # 构造
     process_dict['question_arg_type'] = question_arg_type
+    # 构造
     process_dict['one_hot_type'] = one_hot_type
+    # 构造
     process_dict['tab_cols'] = tab_cols
+    # 构造
     process_dict['tab_ids'] = tab_ids
+    # 构造
     process_dict['col_iter'] = col_iter
+    # 构造
     process_dict['table_names'] = table_names
 
     return process_dict
@@ -168,7 +178,7 @@ def to_batch_seq(sql_data, table_data, idxes, st, ed,
 
     for i in range(st, ed):
         sql = sql_data[idxes[i]]
-        table = table_data[sql['db_id']]
+        table = table_data[sql['table_id']]
 
         process_dict = process(sql, table)
 
