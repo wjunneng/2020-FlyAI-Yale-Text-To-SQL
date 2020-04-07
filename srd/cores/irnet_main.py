@@ -21,8 +21,6 @@ from src.libs import utils
 from src.cores.model import IRNet
 from src.libs import semQL
 
-DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
 
 class Main(FlyAI):
     """
@@ -60,23 +58,19 @@ class Main(FlyAI):
         if not os.path.exists(MODEL_PATH):
             os.makedirs(MODEL_PATH)
 
-        train_sql_data, train_table_data, train_sql = self.train_data.sql_data.to_list(), self.train_data.table_data.to_list(), self.train_data.sql.to_list()
-        train_sql_data = [eval(i) for i in train_sql_data]
-        train_table_data = [eval(i) for i in train_table_data]
-        train_table_data = dict(zip([i['id'] for i in train_table_data], train_table_data))
-        train_sql = [eval(i) for i in train_sql]
+        sql_data, table_data = self.train_data.sql_data.to_list(), self.train_data.table_data.to_list()
+        sql_data = [eval(i) for i in sql_data]
+        table_data = [eval(i) for i in table_data]
 
-        val_sql_data, val_table_data, val_sql = self.valid_data.sql_data.to_list(), self.valid_data.table_data.to_list(), self.valid_data.sql.to_list()
+        val_sql_data, val_table_data = self.valid_data.sql_data.to_list(), self.valid_data.table_data.to_list()
         val_sql_data = [eval(i) for i in val_sql_data]
         val_table_data = [eval(i) for i in val_table_data]
-        val_table_data = dict(zip([i['id'] for i in val_table_data], val_table_data))
-        val_sql = [eval(i) for i in val_sql]
 
         grammar = semQL.Grammar()
         model = IRNet(args, grammar)
 
         if args.cuda:
-            model.cuda(device=DEVICE)
+            model.cuda()
 
         # now get the optimizer
         optimizer_cls = eval('torch.optim.%s' % args.optimizer)
@@ -101,7 +95,7 @@ class Main(FlyAI):
 
             model.load_state_dict(pretrained_modeled)
 
-        # model.word_emb = utils.load_word_emb(args.glove_embed_path)
+        model.word_emb = utils.load_word_emb(args.glove_embed_path)
         # begin train
 
         model_save_path = utils.init_log_checkpoint_path(args)
@@ -112,9 +106,9 @@ class Main(FlyAI):
             with open(os.path.join(model_save_path, 'epoch.log'), 'w') as epoch_fd:
                 for epoch in tqdm.tqdm(range(args.epoch)):
                     if args.lr_scheduler:
-                        scheduler.step(epoch=epoch)
+                        scheduler.step()
                     epoch_begin = time.time()
-                    loss = utils.epoch_train(model, optimizer, args.batch_size, train_sql_data, train_table_data, args,
+                    loss = utils.epoch_train(model, optimizer, args.batch_size, sql_data, table_data, args,
                                              loss_epoch_threshold=args.loss_epoch_threshold,
                                              sketch_loss_coefficient=args.sketch_loss_coefficient)
                     epoch_end = time.time()

@@ -67,8 +67,8 @@ class Main(FlyAI):
         # './data/input/model/glove.twitter.27B.zip'
         path = remote_helper.get_remote_date('https://www.flyai.com/m/glove.twitter.27B.zip')
         glove_path = os.path.split(path)[0]  # './data/input/model'
-        word_emb = load_word_emb(os.path.join(glove_path, 'glove.twitter.27B.25d.txt'))
-
+        # word_emb = load_word_emb(os.path.join(glove_path, 'glove.twitter.27B.25d.txt'))
+        word_emb = None
         sql_model = SQLNet(word_emb, N_word=25, use_ca=True, gpu=GPU)
         optimizer = torch.optim.Adam(sql_model.parameters(), lr=learning_rate, weight_decay=0)
 
