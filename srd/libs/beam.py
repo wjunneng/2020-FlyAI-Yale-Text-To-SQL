@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import copy
 
-from src.libs import semQL
+from srd.libs import semQL
 
 
 class ActionInfo(object):

@@ -1,15 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-# @Time    : 2019/5/25
-# @Author  : Jiaqi&Zecheng
-# @File    : utils.py
-# @Software: PyCharm
-"""
-
 import copy
 
-import src.libs.semQL as define_rule
-from src.cores import nn_utils
+import srd.libs.semQL as define_rule
+from srd.cores import nn_utils
 
 
 class Example:

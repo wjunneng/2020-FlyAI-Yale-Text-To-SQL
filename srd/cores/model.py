@@ -6,12 +6,12 @@ import torch.nn.functional as F
 import torch.nn.utils
 from torch.autograd import Variable
 
-from src.libs.beam import Beams, ActionInfo
-from src.libs.dataset import Batch
-from src.cores import nn_utils
-from src.cores.basic_model import BasicModel
-from src.cores.pointer_net import PointerNet
-from src.libs import semQL as define_rule
+from srd.libs.beam import Beams, ActionInfo
+from srd.libs.dataset import Batch
+from srd.cores import nn_utils
+from srd.cores.basic_model import BasicModel
+from srd.cores.pointer_net import PointerNet
+from srd.libs import semQL as define_rule
 
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import os
+
 import numpy as np
 import os
 import torch
@@ -8,7 +10,7 @@ import torch.nn.utils
 from torch.autograd import Variable
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 
-from src.libs import semQL as define_rule
+from srd.libs import semQL as define_rule
 
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
