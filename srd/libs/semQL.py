@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-Keywords = ['des', 'asc', 'and', 'or', 'sum', 'min', 'max', 'avg', 'none', '=', '!=', '<', '>', '<=', '>=', 'between', 'like', 'not_like'] + [
-    'in', 'not_in', 'count', 'intersect', 'union', 'except'
-]
+# 添加distinct
+Keywords = ['des', 'asc', 'and', 'or', 'sum', 'min', 'max', 'avg', 'none', 'distinct', '=', '!=', '<', '>', '<=', '>=',
+            'between',
+            'like', 'not_like'] + [
+               'in', 'not_in', 'count', 'intersect', 'union', 'except'
+           ]
 
 
 class Grammar(object):
@@ -140,6 +143,7 @@ class N(Action):
     """
     Number of Columns
     """
+
     def __init__(self, id_c, parent=None):
         super(N, self).__init__()
         self.parent = parent
@@ -168,10 +172,12 @@ class N(Action):
     def __repr__(self):
         return 'N(' + str(self.id_c) + ')'
 
+
 class C(Action):
     """
     Column
     """
+
     def __init__(self, id_c, parent=None):
         super(C, self).__init__()
         self.parent = parent
@@ -190,6 +196,7 @@ class T(Action):
     """
     Table
     """
+
     def __init__(self, id_c, parent=None):
         super(T, self).__init__()
 
@@ -209,6 +216,7 @@ class A(Action):
     """
     Aggregator
     """
+
     def __init__(self, id_c, parent=None):
         super(A, self).__init__()
 
@@ -226,7 +234,8 @@ class A(Action):
             2: "A min C",
             3: "A count C",
             4: "A sum C",
-            5: "A avg C"
+            5: "A avg C",
+            6: "A distinct C"  # 自己添加
         }
         self.production_id = {}
         for id_x, value in enumerate(self.grammar_dict.values()):
@@ -245,6 +254,7 @@ class Sel(Action):
     """
     Select
     """
+
     def __init__(self, id_c, parent=None):
         super(Sel, self).__init__()
 
@@ -270,10 +280,12 @@ class Sel(Action):
     def __repr__(self):
         return 'Sel(' + str(self.id_c) + ')'
 
+
 class Filter(Action):
     """
     Filter
     """
+
     def __init__(self, id_c, parent=None):
         super(Filter, self).__init__()
 
@@ -327,6 +339,7 @@ class Sup(Action):
     """
     Superlative
     """
+
     def __init__(self, id_c, parent=None):
         super(Sup, self).__init__()
 
@@ -358,6 +371,7 @@ class Order(Action):
     """
     Order
     """
+
     def __init__(self, id_c, parent=None):
         super(Order, self).__init__()
 

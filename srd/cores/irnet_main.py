@@ -12,6 +12,9 @@ import traceback
 from sklearn.model_selection import train_test_split
 from customer import *
 from torch import optim
+from nltk.stem import WordNetLemmatizer
+
+wordnet_lemmatizer = WordNetLemmatizer()
 
 import json
 from srd.confs.arguments import init_arg_parser, init_config
@@ -23,6 +26,193 @@ DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
 class Main(object):
+    @staticmethod
+    def generate_act(item, col_set, table_names, current_query_list, query_list):
+        # A: Aggregator
+        if 'max(' in item:
+            aggregator = 'A(1) '
+            item = item[item.index('(') + 1:item.index(')')]
+        elif 'min(' in item:
+            aggregator = 'A(2) '
+            item = item[item.index('(') + 1:item.index(')')]
+        elif 'count(' in item:
+            aggregator = 'A(3) '
+            item = item[item.index('(') + 1:item.index(')')]
+        elif 'sum(' in item:
+            aggregator = 'A(4) '
+            item = item[item.index('(') + 1:item.index(')')]
+        elif 'avg(' in item:
+            aggregator = 'A(5) '
+            item = item[item.index('(') + 1:item.index(')')]
+        elif 'distinct(' in item:
+            aggregator = 'A(6) '
+            item = item[item.index('(') + 1:item.index(')')]
+        else:
+            aggregator = 'A(0) '
+
+        # C: column
+        item = item.replace('.', ' ')
+        while True:
+            if item in col_set:
+                break
+
+            item_0 = item.split(' ')[0]
+            item_1 = ' '.join(item.split(' ')[1:])
+            if item_0 in col_set:
+                item = item_0
+                break
+
+            item = item_1
+        column = 'C(' + str(col_set.index(item)) + ') '
+
+        # T: table
+        table_index = current_query_list.index('from') + 1
+        table_value = current_query_list[table_index]
+        if table_value.strip('(').strip(')') in table_names:
+            table_value = table_value.strip('(').strip(')')
+        else:
+            while table_value not in table_names:
+                table_index = query_list.index(table_value)
+                current_text = query_list[table_index:]
+                table_index = current_text.index('from') + 1
+                table_value = current_text[table_index].strip('(').strip(')')
+                if table_value in table_names:
+                    break
+        table = 'T(' + str(table_names.index(table_value)) + ') '
+
+        return aggregator + column + table
+
+    @staticmethod
+    def generate_sample(input_data, input_tables):
+        result = []
+        for index in range(input_data.shape[0]):
+            # print('\nindex: {}'.format(index))
+            sample = dict()
+            # eg.'program_share'
+            db_id = input_data.iloc[index, 0]
+            # eg.'what is the number of different channel owners?'
+            question = input_data.iloc[index, 1]
+            # eg.'select count(distinct owner) from channel'
+            query = input_data.iloc[index, 2]
+            # table
+            table = input_tables[db_id]
+
+            # ################## db_id, query, question, question_toks, question_arg, tabel_names
+            sample['db_id'] = db_id
+            sample['question'] = question
+            sample['question_toks'] = re.findall(r"[\w']+|[.,!?;']", question.lower())
+            sample['question_arg'] = [[i.lower()] for i in sample['question_toks']]
+            sample['table_names'] = table['table_names_original']
+
+            # ################## query 待优化 存在 "count ( t4.paperid )" 的情况
+            query_list = query.strip(';').split(' ')
+            while '' in query_list:
+                query_list.remove('')
+            sample['query'] = query
+
+            # ################## col_set
+            col_set = []
+            for i in table['column_names_original']:
+                if i[1] not in col_set:
+                    col_set.append(i[1])
+            sample['col_set'] = col_set
+
+            # ################## question_arg_type 待优化
+            tmp = []
+            for char in question.split(' '):
+                if char == query_list[query_list.index('from') + 1]:
+                    tmp.append(['table'])
+                else:
+                    tmp.append(['NONE'])
+            sample['question_arg_type'] = tmp
+
+            # ################## rule_table
+            rule_able = ''
+            # Root1
+            if ' intersect ' in query:
+                rule_able += 'Root1(0) '
+            elif ' union ' in query:
+                rule_able += 'Root1(1) '
+            elif ' except ' in query:
+                rule_able += 'Root1(2) '
+            else:
+                rule_able += 'Root1(3) '
+
+            select_start_index = query_list.index('select')
+            select_end_indexs = [i for i, x in enumerate(query_list) if x == 'select']
+            select_end_indexs.append(len(query_list))
+            for select_end_index in select_end_indexs[1:]:
+                current_query_list = query_list[select_start_index:select_end_index]
+
+                current_query_str = ' '.join(current_query_list)
+                select_start_index = select_end_index
+                # Root
+                """                
+                    0: 'Root Sel Sup Filter',    关键字[(desc limit 或 asc limit) 和 where]
+                    2: 'Root Sel Sup',           关键字[(desc limit 或 asc limit)]                    
+                    1: 'Root Sel Filter Order',  关键字[where 和 (asc 或 desc) 注asc和desc通常位于尾部]                    
+                    3: 'Root Sel Filter',        关键字[where]   
+                    4: 'Root Sel Order',         关键字[(asc 或 desc)]
+                    5: 'Root Sel'                关键字[select]
+                """
+                root = ''
+                if (
+                        ' desc limit ' in current_query_str or ' asc limit ' in current_query_str) and ' where ' in current_query_str:
+                    root = 'Root(0) '
+                elif ' desc limit ' in current_query_str or ' asc limit ' in current_query_str:
+                    root = 'Root(2) '
+                elif ' where' in current_query_str and (' asc' in current_query_str or ' desc' in current_query_str):
+                    root = 'Root(1) '
+                elif ' where ' in current_query_str:
+                    root = 'Root(3) '
+                elif ' asc' in current_query_str or ' desc' in current_query_str:
+                    root = 'Root(4) '
+                else:
+                    root = 'Root(5) '
+                rule_able += root
+
+                # Sel
+                rule_able += 'Sel(0) '
+
+                # 从select到from关键字之间的字符 解决['avg(hs) ', ' max(hs) ', ' min(hs)']和['max ( distinct length )']问题
+                select_text_from_list = ' '.join(current_query_list[1:current_query_list.index('from')]).split(',')
+                select_text_from_list_norm = []
+                for item in select_text_from_list:
+                    item = item.strip()
+                    if ' ( ' in item:
+                        item = item.replace(' ( ', '(')
+                    elif '( ' in item:
+                        item = item.replace('( ', '(')
+                    elif ' (' in item:
+                        item = item.replace(' (', '(')
+
+                    if ' ) ' in item:
+                        item = item.replace(' ) ', ')')
+                    elif ') ' in item:
+                        item = item.replace(') ', ')')
+                    elif ' )' in item:
+                        item = item.replace(' )', ')')
+
+                    select_text_from_list_norm.append(item)
+
+                # N
+                rule_able += 'N(' + str(len(select_text_from_list_norm) - 1) + ') '
+
+                for item in select_text_from_list_norm:
+                    item = item.strip()
+
+                    rule_able += Main.generate_act(item=item, col_set=col_set, table_names=sample['table_names'],
+                                                   current_query_list=current_query_list, query_list=query_list)
+
+                print('\n')
+                print(query)
+                print(rule_able)
+
+            sample['rule_able'] = rule_able.strip()
+            result.append(sample)
+
+        return result
+
     def deal_with_data(self):
         """
         处理数据，没有可不写。
@@ -36,35 +226,9 @@ class Main(object):
         # 划分训练集、测试集
         train_data, valid_data = train_test_split(self.data, test_size=0.2, random_state=6, shuffle=True)
 
-        self.train_data = []
-        for index in range(train_data.shape[0]):
-            sample = {}
-            # eg.'program_share'
-            db_id = train_data.iloc[0, 0]
-            # eg.'what is the number of different channel owners?'
-            question = train_data.iloc[0, 1]
-            # eg.'select count(distinct owner) from channel'
-            query = train_data.iloc[0, 2]
+        self.train_data = Main.generate_sample(input_data=train_data, input_tables=self.tables)
 
-            sample['db_id'] = db_id
-            sample['query'] = query
-            sample['question'] = question
-            self.train_data.append(sample)
-
-        self.vaild_data = []
-        for index in range(valid_data.shape[0]):
-            sample = {}
-            # eg.'program_share'
-            db_id = valid_data.iloc[0, 0]
-            # eg.'what is the number of different channel owners?'
-            question = valid_data.iloc[0, 1]
-            # eg.'select count(distinct owner) from channel'
-            query = valid_data.iloc[0, 2]
-
-            sample['db_id'] = db_id
-            sample['query'] = query
-            sample['question'] = question
-            self.vaild_data.append(sample)
+        self.vaild_data = Main.generate_sample(input_data=valid_data, input_tables=self.tables)
 
         print('=*=数据处理完成=*=')
 
@@ -101,7 +265,7 @@ class Main(object):
 
             model.load_state_dict(pretrained_modeled)
 
-        # model.word_emb = utils.load_word_emb(args.glove_embed_path)
+        model.word_emb = utils.load_word_emb(args.glove_embed_path)
         # begin train
 
         model_save_path = utils.init_log_checkpoint_path(args)

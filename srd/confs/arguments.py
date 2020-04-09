@@ -33,7 +33,7 @@ def init_arg_parser():
     arg_parser.add_argument('--load_model', default=None, type=str,
                             help='load a pre-trained model')
     arg_parser.add_argument('--glove_embed_path',
-                            default="/home/wjunneng/Ubuntu/2020-FlyAI-Yale-Text-To-SQL/data/input/model/glove.42B.300d.txt",
+                            default="../data/glove.42B.300d.txt",
                             type=str,
                             help='glove embed path')
 

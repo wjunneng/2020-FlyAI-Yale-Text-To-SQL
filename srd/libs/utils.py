@@ -110,7 +110,6 @@ def schema_linking(question_arg, question_arg_type, one_hot_type, col_set_type, 
 def process(sql, table):
     process_dict = {}
 
-    origin_sql = sql['question_toks']
     table_names = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in table['table_names']]
 
     sql['pre_sql'] = copy.deepcopy(sql)
@@ -118,9 +117,9 @@ def process(sql, table):
     tab_cols = [col[1] for col in table['column_names']]
     tab_ids = [col[0] for col in table['column_names']]
 
-    col_set_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in sql['col_set']]
+    col_set_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in tab_cols]
     col_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(" ")] for x in tab_cols]
-    q_iter_small = [wordnet_lemmatizer.lemmatize(x).lower() for x in origin_sql]
+    q_iter_small = [wordnet_lemmatizer.lemmatize(x).lower() for x in sql['question_toks']]
     question_arg = copy.deepcopy(sql['question_arg'])
     question_arg_type = sql['question_arg_type']
     one_hot_type = np.zeros((len(question_arg_type), 6))
