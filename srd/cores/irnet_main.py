@@ -377,8 +377,6 @@ class Main(object):
                 else:
                     tmp.append(['NONE'])
             sample['question_arg_type'] = tmp
-            # print(sample['question_arg'])
-            # print(sample['question_arg_type'])
             assert len(sample['question_arg']) == len(sample['question_arg_type'])
 
             # ################## rule_table
@@ -397,6 +395,38 @@ class Main(object):
         print(count)
         return result
 
+    @staticmethod
+    def generate_sample_1(input_data, input_tables):
+        result = []
+
+        with open(file='../data/contrast.json', encoding='utf-8', mode='r') as file:
+            contrast = json.load(fp=file)
+
+        count = 0
+        for index in range(input_data.shape[0]):
+            # print('\nindex: {}'.format(index))
+            sample = dict()
+            # eg.'program_share'
+            db_id = input_data.iloc[index, 0]
+            # eg.'what is the number of different channel owners?'
+            question = input_data.iloc[index, 1]
+            # eg.'select count(distinct owner) from channel'
+            query = input_data.iloc[index, 2]
+            # table
+            table = input_tables[db_id]
+
+            if query in contrast:
+                sample['db_id'], sample['question'], sample['question_toks'], sample['question_arg'], sample[
+                    'question_arg_type'], sample['query'], sample['table_names'], sample['col_set'], sample[
+                    'rule_label'] = \
+                    contrast[query]
+                result.append(sample)
+            else:
+                count += 1
+
+        print(count)
+        return result
+
     def deal_with_data(self):
         """
         处理数据，没有可不写。
@@ -410,9 +440,9 @@ class Main(object):
         # 划分训练集、测试集
         train_data, valid_data = train_test_split(self.data, test_size=0.2, random_state=6, shuffle=True)
 
-        self.train_data = Main.generate_sample(input_data=train_data, input_tables=self.tables)
+        self.train_data = Main.generate_sample_1(input_data=train_data, input_tables=self.tables)
 
-        self.vaild_data = Main.generate_sample(input_data=valid_data, input_tables=self.tables)
+        self.vaild_data = Main.generate_sample_1(input_data=valid_data, input_tables=self.tables)
 
         print('=*=数据处理完成=*=')
 

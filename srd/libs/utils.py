@@ -170,8 +170,7 @@ def is_valid(rule_label, col_table_dict, sql):
     return flag is False
 
 
-def to_batch_seq(sql_data, table_data, idxes, st, ed,
-                 is_train=True):
+def to_batch_seq(sql_data, table_data, idxes, st, ed, is_train=True):
     """
 
     :return:
@@ -207,9 +206,12 @@ def to_batch_seq(sql_data, table_data, idxes, st, ed,
                 continue
 
         example = Example(
+            #
             src_sent=process_dict['question_arg'],
+            #
             col_num=len(process_dict['col_set_iter']),
             vis_seq=(sql['question'], process_dict['col_set_iter'], sql['query']),
+            #
             tab_cols=process_dict['col_set_iter'],
             sql=sql['query'],
             one_hot_type=process_dict['one_hot_type'],
