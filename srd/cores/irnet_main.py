@@ -27,6 +27,103 @@ DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 class Main(object):
     @staticmethod
+    def delete_space(item):
+        if ' ( ' in item:
+            item = item.replace(' ( ', '(')
+        elif '( ' in item:
+            item = item.replace('( ', '(')
+        elif ' (' in item:
+            item = item.replace(' (', '(')
+
+        if ' ) ' in item:
+            item = item.replace(' ) ', ')')
+        elif ') ' in item:
+            item = item.replace(') ', ')')
+        elif ' )' in item:
+            item = item.replace(' )', ')')
+
+        return item
+
+    @staticmethod
+    def deal_order_action(rule_able, current_query_str):
+        # Order
+        if current_query_str.endswith(' desc'):
+            rule_able += 'Order(0) '
+            char = 'desc'
+        else:
+            rule_able += 'Order(1) '
+            char = ' asc'
+
+        item = current_query_str[
+               current_query_str.index(' order by ') + len(' order by '): current_query_str.index(
+                   char)].strip()
+        item = Main.delete_space(item=item)
+        return rule_able, item
+
+    @staticmethod
+    def deal_sup_action(rule_able, current_query_str):
+        # Sup
+        if ' desc limit ' in current_query_str:
+            rule_able += 'Sup(0) '
+            char = ' desc limit '
+        else:
+            rule_able += 'Sup(1) '
+            char = ' asc limit '
+
+        item = current_query_str[
+               current_query_str.index(' order by ') + len(' order by '): current_query_str.index(
+                   char)].strip()
+        item = Main.delete_space(item=item)
+        return rule_able, item
+
+    @staticmethod
+    def deal_filter_action(rule_able, current_query_str):
+        # Filter
+        if ' = ' in current_query_str:
+            rule_able += 'Filter(2) '
+
+            char = '='
+        elif ' != ' in current_query_str:
+            rule_able += 'Filter(3) '
+
+            char = '!='
+        elif ' < ' in current_query_str:
+            rule_able += 'Filter(4) '
+
+            char = '<'
+        elif ' > ' in current_query_str:
+            rule_able += 'Filter(5) '
+
+            char = '>'
+        elif ' <= ' in current_query_str:
+            rule_able += 'Filter(6) '
+
+            char = '<='
+        elif ' >= ' in current_query_str:
+            rule_able += 'Filter(7) '
+
+            char = '>='
+        elif ' between ' in current_query_str:
+            rule_able += 'Filter(8) '
+
+            char = 'between'
+        elif ' like ' in current_query_str:
+            rule_able += 'Filter(9) '
+
+            char = 'like'
+        elif ' not_like ' in current_query_str:
+            rule_able += 'Filter(10) '
+
+            char = 'not_like'
+
+        else:
+            print(current_query_str)
+
+        item = current_query_str[: current_query_str.index(char)].strip()
+        item = Main.delete_space(item=item)
+        return rule_able, item
+
+    @staticmethod
     def generate_act(item, col_set, table_names, current_query_list, query_list):
         # A: Aggregator
         if 'max(' in item:
@@ -83,8 +180,162 @@ class Main(object):
         return aggregator + column + table
 
     @staticmethod
+    def generate_rule_label(query, query_list, table_names, col_set):
+        rule_able = ''
+        # Root1
+        if ' intersect ' in query:
+            rule_able += 'Root1(0) '
+        elif ' union ' in query:
+            rule_able += 'Root1(1) '
+        elif ' except ' in query:
+            rule_able += 'Root1(2) '
+        else:
+            rule_able += 'Root1(3) '
+
+        select_start_index = query_list.index('select')
+        select_end_indexs = [i for i, x in enumerate(query_list) if x == 'select']
+        select_end_indexs.append(len(query_list))
+        for select_end_index in select_end_indexs[1:]:
+            current_query_list = query_list[select_start_index:select_end_index]
+
+            current_query_str = ' '.join(current_query_list)
+            select_start_index = select_end_index
+            # Root
+            """
+                0: 'Root Sel Sup Filter',    关键字[(desc limit 或 asc limit) 和 where]
+                2: 'Root Sel Sup',           关键字[(desc limit 或 asc limit)]
+                1: 'Root Sel Filter Order',  关键字[where 和 (asc 或 desc) 注asc和desc通常位于尾部]
+                3: 'Root Sel Filter',        关键字[where]
+                4: 'Root Sel Order',         关键字[(asc 或 desc)]
+                5: 'Root Sel'                关键字[select]
+            """
+            root = ''
+            if (
+                    ' desc limit ' in current_query_str or ' asc limit ' in current_query_str) and ' where ' in current_query_str:
+                root = 'Root(0) '
+            elif ' desc limit ' in current_query_str or ' asc limit ' in current_query_str:
+                root = 'Root(2) '
+            elif ' where' in current_query_str and (
+                    current_query_str.endswith(' asc') or current_query_str.endswith(' desc')):
+                root = 'Root(1) '
+            elif ' where ' in current_query_str:
+                root = 'Root(3) '
+            elif current_query_str.endswith(' asc') or current_query_str.endswith(' desc'):
+                root = 'Root(4) '
+            else:
+                root = 'Root(5) '
+            rule_able += root
+
+            # Sel
+            rule_able += 'Sel(0) '
+
+            # 从select到from关键字之间的字符 解决['avg(hs) ', ' max(hs) ', ' min(hs)']和['max ( distinct length )']问题
+            select_text_from_list = ' '.join(current_query_list[1:current_query_list.index('from')]).split(',')
+            select_text_from_list_norm = []
+            for item in select_text_from_list:
+                item = item.strip()
+                item = Main.delete_space(item=item)
+
+                select_text_from_list_norm.append(item)
+
+            # N
+            rule_able += 'N(' + str(len(select_text_from_list_norm) - 1) + ') '
+
+            for item in select_text_from_list_norm:
+                item = item.strip()
+
+                rule_able += Main.generate_act(item=item, col_set=col_set, table_names=table_names,
+                                               current_query_list=current_query_list, query_list=query_list)
+
+            # 'Root Sel Sup Filter' eg: Sup(0) A(3) C(0) T(2) Filter(4) A(0) C(3) T(0)
+            if root == 'Root(0) ':
+                pass
+
+                # # Sup
+                # if ' desc limit ' in current_query_str:
+                #     rule_able += 'Sup(0) '
+                # else:
+                #     rule_able += 'Sup(1) '
+                #
+                # rule_able += Main.generate_act(item='', col_set=col_set, table_names=table_names,
+                #                                current_query_list=current_query_list, query_list=query_list)
+                #
+                # # Filter
+                # rule_able += Main.generate_act(item='', col_set=col_set, table_names=table_names,
+                #                                current_query_list=current_query_list, query_list=query_list)
+
+            # 'Root Sel Sup' eg: Sup(0) A(3) C(0) T(2)
+            elif root == 'Root(2) ':
+                # Sup
+                rule_able, item = Main.deal_sup_action(rule_able=rule_able, current_query_str=current_query_str)
+                rule_able += Main.generate_act(item=item, col_set=col_set, table_names=table_names,
+                                               current_query_list=current_query_list, query_list=query_list)
+
+            # 'Root Sel Filter Order' eg: Filter(5) A(0) C(3) T(0) Order(1) A(0) C(1) T(0)
+            elif root == 'Root(1) ':
+                pass
+
+                # rule_able += Main.generate_act(item='', col_set=col_set, table_names=table_names,
+                #                                current_query_list=current_query_list, query_list=query_list)
+                #
+                # # Order
+                # if ' desc' in current_query_str:
+                #     rule_able += 'Order(0) '
+                # else:
+                #     rule_able += 'Order(1) '
+                #
+                # rule_able += Main.generate_act(item='', col_set=col_set, table_names=table_names,
+                #                                current_query_list=current_query_list, query_list=query_list)
+
+            # 'Root Sel Filter' eg: Filter(18) A(0) C(14) T(2)
+            elif root == 'Root(3) ':
+                pass
+                # # Filter
+                # item_str = current_query_str[current_query_str.index('where') + len('where'):].strip()
+                #
+                # while len(item_str) != 0:
+                #     if item_str.count(' and ') > 1:
+                #         print('\n' + item_str)
+                #         break
+                #
+                #     if ' and ' in item_str:
+                #         print(item_str)
+                #         rule_able += 'Filter(0) '
+                #         current_item_str = item_str[:item_str.index(' and ')]
+                #         current_item_str = Main.delete_space(item=current_item_str)
+                #
+                #         rule_able, item = Main.deal_filter_action(rule_able=rule_able,
+                #                                                   current_query_str=current_item_str)
+                #         rule_able += Main.generate_act(item=item, col_set=col_set,
+                #                                        table_names=table_names,
+                #                                        current_query_list=current_query_list, query_list=query_list)
+                #         item_str = item_str[item_str.index(' and ') + len(' and '):]
+                #
+                #     else:
+                #         break
+            # 'Root Sel Order' eg: Order(1) A(0) C(2) T(0)
+            elif root == 'Root(4) ':
+                rule_able, item = Main.deal_order_action(rule_able=rule_able, current_query_str=current_query_str)
+
+                rule_able += Main.generate_act(item=item, col_set=col_set, table_names=table_names,
+                                               current_query_list=current_query_list, query_list=query_list)
+
+
+            # 'Root Sel' eg: 无需处理
+            else:
+                pass
+
+            # print('\n')
+            # print(query)
+            # print(rule_able)
+            # print('\n')
+
+        return rule_able
+
+    @staticmethod
     def generate_sample(input_data, input_tables):
         result = []
+        count = 0
         for index in range(input_data.shape[0]):
             # print('\nindex: {}'.format(index))
             sample = dict()
@@ -119,98 +370,31 @@ class Main(object):
 
             # ################## question_arg_type 待优化
             tmp = []
-            for char in question.split(' '):
+            for char in sample['question_arg']:
+                char = char[0]
                 if char == query_list[query_list.index('from') + 1]:
                     tmp.append(['table'])
                 else:
                     tmp.append(['NONE'])
             sample['question_arg_type'] = tmp
+            # print(sample['question_arg'])
+            # print(sample['question_arg_type'])
+            assert len(sample['question_arg']) == len(sample['question_arg_type'])
 
             # ################## rule_table
-            rule_able = ''
-            # Root1
-            if ' intersect ' in query:
-                rule_able += 'Root1(0) '
-            elif ' union ' in query:
-                rule_able += 'Root1(1) '
-            elif ' except ' in query:
-                rule_able += 'Root1(2) '
+            with open('../data/query_rule.json', mode='r', encoding='utf-8') as file:
+                query_rule_able = json.load(file)
+
+            if sample['query'] in query_rule_able:
+                # print('query->rule_table: {}'.format(query))
+                sample['rule_label'] = query_rule_able[sample['query']].strip()
             else:
-                rule_able += 'Root1(3) '
-
-            select_start_index = query_list.index('select')
-            select_end_indexs = [i for i, x in enumerate(query_list) if x == 'select']
-            select_end_indexs.append(len(query_list))
-            for select_end_index in select_end_indexs[1:]:
-                current_query_list = query_list[select_start_index:select_end_index]
-
-                current_query_str = ' '.join(current_query_list)
-                select_start_index = select_end_index
-                # Root
-                """                
-                    0: 'Root Sel Sup Filter',    关键字[(desc limit 或 asc limit) 和 where]
-                    2: 'Root Sel Sup',           关键字[(desc limit 或 asc limit)]                    
-                    1: 'Root Sel Filter Order',  关键字[where 和 (asc 或 desc) 注asc和desc通常位于尾部]                    
-                    3: 'Root Sel Filter',        关键字[where]   
-                    4: 'Root Sel Order',         关键字[(asc 或 desc)]
-                    5: 'Root Sel'                关键字[select]
-                """
-                root = ''
-                if (
-                        ' desc limit ' in current_query_str or ' asc limit ' in current_query_str) and ' where ' in current_query_str:
-                    root = 'Root(0) '
-                elif ' desc limit ' in current_query_str or ' asc limit ' in current_query_str:
-                    root = 'Root(2) '
-                elif ' where' in current_query_str and (' asc' in current_query_str or ' desc' in current_query_str):
-                    root = 'Root(1) '
-                elif ' where ' in current_query_str:
-                    root = 'Root(3) '
-                elif ' asc' in current_query_str or ' desc' in current_query_str:
-                    root = 'Root(4) '
-                else:
-                    root = 'Root(5) '
-                rule_able += root
-
-                # Sel
-                rule_able += 'Sel(0) '
-
-                # 从select到from关键字之间的字符 解决['avg(hs) ', ' max(hs) ', ' min(hs)']和['max ( distinct length )']问题
-                select_text_from_list = ' '.join(current_query_list[1:current_query_list.index('from')]).split(',')
-                select_text_from_list_norm = []
-                for item in select_text_from_list:
-                    item = item.strip()
-                    if ' ( ' in item:
-                        item = item.replace(' ( ', '(')
-                    elif '( ' in item:
-                        item = item.replace('( ', '(')
-                    elif ' (' in item:
-                        item = item.replace(' (', '(')
-
-                    if ' ) ' in item:
-                        item = item.replace(' ) ', ')')
-                    elif ') ' in item:
-                        item = item.replace(') ', ')')
-                    elif ' )' in item:
-                        item = item.replace(' )', ')')
-
-                    select_text_from_list_norm.append(item)
-
-                # N
-                rule_able += 'N(' + str(len(select_text_from_list_norm) - 1) + ') '
-
-                for item in select_text_from_list_norm:
-                    item = item.strip()
-
-                    rule_able += Main.generate_act(item=item, col_set=col_set, table_names=sample['table_names'],
-                                                   current_query_list=current_query_list, query_list=query_list)
-
-                print('\n')
-                print(query)
-                print(rule_able)
-
-            sample['rule_able'] = rule_able.strip()
+                count += 1
+                sample['rule_label'] = Main.generate_rule_label(query=query, query_list=query_list, col_set=col_set,
+                                                                table_names=sample['table_names'])
             result.append(sample)
 
+        print(count)
         return result
 
     def deal_with_data(self):
@@ -284,7 +468,7 @@ class Main(object):
                     epoch_end = time.time()
                     json_datas, sketch_acc, acc = utils.epoch_acc(model, args.batch_size, self.vaild_data, self.tables,
                                                                   beam_size=args.beam_size)
-                    # acc = utils.eval_acc(json_datas, val_sql_data)
+                    acc = utils.eval_acc(json_datas, self.vaild_data)
 
                     if acc > best_dev_acc:
                         utils.save_checkpoint(model, os.path.join(model_save_path, 'best_model.model'))
@@ -306,7 +490,7 @@ class Main(object):
             utils.save_checkpoint(model, os.path.join(model_save_path, 'end_model.model'))
             json_datas, sketch_acc, acc = utils.epoch_acc(model, args.batch_size, self.vaild_data, self.tables,
                                                           beam_size=args.beam_size)
-            # acc = utils.eval_acc(json_datas, val_sql_data)
+            acc = utils.eval_acc(json_datas, self.vaild_data)
 
             print("Sketch Acc: %f, Acc: %f, Beam Acc: %f" % (sketch_acc, acc, acc,))
 
@@ -317,7 +501,7 @@ if __name__ == '__main__':
 
     # 项目的超参，不使用可以删除
     parser = argparse.ArgumentParser()
-    parser.add_argument("-e", "--EPOCHS", default=100, type=int, help="train epochs")
+    parser.add_argument("-e", "--EPOCHS", default=10, type=int, help="train epochs")
     parser.add_argument("-b", "--BATCH", default=32, type=int, help="batch size")
     args.EPOCHS = parser.parse_args().EPOCHS
     args.BATCH = parser.parse_args().BATCH

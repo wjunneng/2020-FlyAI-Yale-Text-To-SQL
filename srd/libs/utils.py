@@ -110,12 +110,25 @@ def schema_linking(question_arg, question_arg_type, one_hot_type, col_set_type, 
 def process(sql, table):
     process_dict = {}
 
-    table_names = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in table['table_names']]
+    table_names = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in
+                   table['table_names_original']]
 
     sql['pre_sql'] = copy.deepcopy(sql)
 
-    tab_cols = [col[1] for col in table['column_names']]
-    tab_ids = [col[0] for col in table['column_names']]
+    before = -1
+    index = -1
+    tab_cols, tab_ids = [], []
+    for item in table['column_names_original']:
+        id = item[0]
+        col = item[1]
+        if col not in tab_cols:
+            tab_cols.append(col)
+            if id == before:
+                tab_ids.append(index)
+            else:
+                index += 1
+                tab_ids.append(index)
+            before = id
 
     col_set_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in tab_cols]
     col_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(" ")] for x in tab_cols]
@@ -220,8 +233,8 @@ def to_batch_seq(sql_data, table_data, idxes, st, ed,
         return examples
 
 
-def epoch_train(model, optimizer, batch_size, sql_data, table_data,
-                args, epoch=0, loss_epoch_threshold=20, sketch_loss_coefficient=0.2):
+def epoch_train(model, optimizer, batch_size, sql_data, table_data, args, epoch=0, loss_epoch_threshold=20,
+                sketch_loss_coefficient=0.2):
     model.train()
     # shuffe
     perm = np.random.permutation(len(sql_data))

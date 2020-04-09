@@ -9,12 +9,13 @@ class Example:
     """
 
     """
+
     def __init__(self, src_sent, tgt_actions=None, vis_seq=None, tab_cols=None, col_num=None, sql=None,
                  one_hot_type=None, col_hot_type=None, schema_len=None, tab_ids=None,
                  table_names=None, table_len=None, col_table_dict=None, cols=None,
                  table_col_name=None, table_col_len=None,
-                  col_pred=None, tokenized_src_sent=None,
-        ):
+                 col_pred=None, tokenized_src_sent=None,
+                 ):
 
         self.src_sent = src_sent
         self.tokenized_src_sent = tokenized_src_sent
@@ -22,7 +23,7 @@ class Example:
         self.tab_cols = tab_cols
         self.col_num = col_num
         self.sql = sql
-        self.one_hot_type=one_hot_type
+        self.one_hot_type = one_hot_type
         self.col_hot_type = col_hot_type
         self.schema_len = schema_len
         self.tab_ids = tab_ids
@@ -98,7 +99,6 @@ class Batch(object):
     def __len__(self):
         return len(self.examples)
 
-
     def table_dict_mask(self, table_dict):
         return nn_utils.table_dict_to_mask_tensor(self.table_len, table_dict, cuda=self.cuda)
 
@@ -126,5 +126,3 @@ class Batch(object):
     def src_token_mask(self):
         return nn_utils.length_array_to_mask_tensor(self.src_sents_len,
                                                     cuda=self.cuda)
-
-
