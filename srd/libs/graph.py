@@ -1,13 +1,9 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT license.
+# -*- coding:utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import os
+import sys
 
-# -*- coding: utf-8 -*-
-"""
-# @Time    : 2019/5/25
-# @Author  : Jiaqi&Zecheng
-# @File    : utils.py
-# @Software: PyCharm
-"""
+os.chdir(sys.path[0])
 
 from collections import deque, namedtuple
 

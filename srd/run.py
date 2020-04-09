@@ -1,27 +1,30 @@
-# -*- coding: utf-8 -*-
+# -*- coding:utf-8 -*-
+from __future__ import absolute_import, division, print_function
 import os
 import sys
 
+sys.path.append(os.path.abspath('..'))
 os.chdir(sys.path[0])
 import argparse
 import copy
 import time
 import tqdm
+import re
+import torch
+import json
 import traceback
+import pandas as pd
 
-from sklearn.model_selection import train_test_split
-from customer import *
 from torch import optim
 from nltk.stem import WordNetLemmatizer
+from sklearn.model_selection import train_test_split
 
-wordnet_lemmatizer = WordNetLemmatizer()
-
-import json
 from srd.confs.arguments import init_arg_parser, init_config
 from srd.libs import utils
 from srd.cores.model import IRNet
 from srd.libs import semQL
 
+wordnet_lemmatizer = WordNetLemmatizer()
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
@@ -399,7 +402,7 @@ class Main(object):
     def generate_sample_1(input_data, input_tables):
         result = []
 
-        with open(file='../data/contrast.json', encoding='utf-8', mode='r') as file:
+        with open(file='data/contrast.json', encoding='utf-8', mode='r') as file:
             contrast = json.load(fp=file)
 
         count = 0
@@ -421,8 +424,6 @@ class Main(object):
                     'rule_label'] = \
                     contrast[query]
 
-                if db_id != sample['db_id']:
-                    continue
                 sample['db_id'] = db_id
                 result.append(sample)
             else:
@@ -437,10 +438,10 @@ class Main(object):
         :return:
         """
         # 表数据
-        self.tables = json.load(fp=open('../data/table.json'))
+        self.tables = json.load(fp=open('data/table.json'))
         self.tables = dict(zip([i['db_id'] for i in self.tables], self.tables))
         # 加载数据
-        self.data = pd.read_csv(os.path.join('../data/train.csv'))
+        self.data = pd.read_csv(os.path.join('data/train.csv'))
         # 划分训练集、测试集
         train_data, valid_data = train_test_split(self.data, test_size=0.2, random_state=6, shuffle=True)
 
@@ -536,7 +537,7 @@ if __name__ == '__main__':
     # 项目的超参，不使用可以删除
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--EPOCHS", default=10, type=int, help="train epochs")
-    parser.add_argument("-b", "--BATCH", default=32, type=int, help="batch size")
+    parser.add_argument("-b", "--BATCH", default=128, type=int, help="batch size")
     args.epoch = parser.parse_args().EPOCHS
     args.batch_size = parser.parse_args().BATCH
     args.cuda = True

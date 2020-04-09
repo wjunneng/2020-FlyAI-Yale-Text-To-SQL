@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# -*- coding:utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import os
+import sys
+
+os.chdir(sys.path[0])
 
 import random
 import argparse
@@ -33,7 +38,7 @@ def init_arg_parser():
     arg_parser.add_argument('--load_model', default=None, type=str,
                             help='load a pre-trained model')
     arg_parser.add_argument('--glove_embed_path',
-                            default="../data/glove.42B.300d.txt",
+                            default="./data/glove.42B.300d.txt",
                             type=str,
                             help='glove embed path')
 
