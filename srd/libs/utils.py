@@ -110,29 +110,17 @@ def schema_linking(question_arg, question_arg_type, one_hot_type, col_set_type, 
 def process(sql, table):
     process_dict = {}
 
-    table_names = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in
-                   table['table_names_original']]
+    origin_sql = sql['question_toks']
+    table_names = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in table['table_names']]
 
     sql['pre_sql'] = copy.deepcopy(sql)
 
-    before = -1
-    index = -1
-    tab_cols, tab_ids = [], []
-    for item in table['column_names_original']:
-        id = item[0]
-        col = item[1]
-        if col not in tab_cols:
-            tab_cols.append(col)
-            if id == before:
-                tab_ids.append(index)
-            else:
-                index += 1
-                tab_ids.append(index)
-            before = id
+    tab_cols = [col[1] for col in table['column_names']]
+    tab_ids = [col[0] for col in table['column_names']]
 
-    col_set_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in tab_cols]
+    col_set_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in sql['col_set']]
     col_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(" ")] for x in tab_cols]
-    q_iter_small = [wordnet_lemmatizer.lemmatize(x).lower() for x in sql['question_toks']]
+    q_iter_small = [wordnet_lemmatizer.lemmatize(x).lower() for x in origin_sql]
     question_arg = copy.deepcopy(sql['question_arg'])
     question_arg_type = sql['question_arg_type']
     one_hot_type = np.zeros((len(question_arg_type), 6))
@@ -170,7 +158,8 @@ def is_valid(rule_label, col_table_dict, sql):
     return flag is False
 
 
-def to_batch_seq(sql_data, table_data, idxes, st, ed, is_train=True):
+def to_batch_seq(sql_data, table_data, idxes, st, ed,
+                 is_train=True):
     """
 
     :return:
@@ -206,12 +195,9 @@ def to_batch_seq(sql_data, table_data, idxes, st, ed, is_train=True):
                 continue
 
         example = Example(
-            #
             src_sent=process_dict['question_arg'],
-            #
             col_num=len(process_dict['col_set_iter']),
             vis_seq=(sql['question'], process_dict['col_set_iter'], sql['query']),
-            #
             tab_cols=process_dict['col_set_iter'],
             sql=sql['query'],
             one_hot_type=process_dict['one_hot_type'],
@@ -235,8 +221,8 @@ def to_batch_seq(sql_data, table_data, idxes, st, ed, is_train=True):
         return examples
 
 
-def epoch_train(model, optimizer, batch_size, sql_data, table_data, args, epoch=0, loss_epoch_threshold=20,
-                sketch_loss_coefficient=0.2):
+def epoch_train(model, optimizer, batch_size, sql_data, table_data,
+                args, epoch=0, loss_epoch_threshold=20, sketch_loss_coefficient=0.2):
     model.train()
     # shuffe
     perm = np.random.permutation(len(sql_data))
@@ -341,7 +327,7 @@ def load_data_new(sql_path, table_data, use_small=False):
 def load_dataset(dataset_dir, use_small=False):
     print("Loading from datasets...")
 
-    TABLE_PATH = os.path.join(dataset_dir, "tables.json")
+    TABLE_PATH = os.path.join(dataset_dir, "table.json")
     TRAIN_PATH = os.path.join(dataset_dir, "train.json")
     DEV_PATH = os.path.join(dataset_dir, "dev.json")
     with open(TABLE_PATH) as inf:

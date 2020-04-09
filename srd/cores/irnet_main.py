@@ -412,14 +412,18 @@ class Main(object):
             question = input_data.iloc[index, 1]
             # eg.'select count(distinct owner) from channel'
             query = input_data.iloc[index, 2]
-            # table
-            table = input_tables[db_id]
+            # # table
+            # table = input_tables[db_id]
 
             if query in contrast:
                 sample['db_id'], sample['question'], sample['question_toks'], sample['question_arg'], sample[
                     'question_arg_type'], sample['query'], sample['table_names'], sample['col_set'], sample[
                     'rule_label'] = \
                     contrast[query]
+
+                if db_id != sample['db_id']:
+                    continue
+                sample['db_id'] = db_id
                 result.append(sample)
             else:
                 count += 1
@@ -433,7 +437,7 @@ class Main(object):
         :return:
         """
         # 表数据
-        self.tables = json.load(fp=open('../data/tables.json'))
+        self.tables = json.load(fp=open('../data/table.json'))
         self.tables = dict(zip([i['db_id'] for i in self.tables], self.tables))
         # 加载数据
         self.data = pd.read_csv(os.path.join('../data/train.csv'))
@@ -490,7 +494,7 @@ class Main(object):
             with open(os.path.join(model_save_path, 'epoch.log'), 'w') as epoch_fd:
                 for epoch in tqdm.tqdm(range(args.epoch)):
                     if args.lr_scheduler:
-                        scheduler.step(epoch)
+                        scheduler.step()
                     epoch_begin = time.time()
                     loss = utils.epoch_train(model, optimizer, args.batch_size, self.train_data, self.tables, args,
                                              loss_epoch_threshold=args.loss_epoch_threshold,
@@ -533,8 +537,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--EPOCHS", default=10, type=int, help="train epochs")
     parser.add_argument("-b", "--BATCH", default=32, type=int, help="batch size")
-    args.EPOCHS = parser.parse_args().EPOCHS
-    args.BATCH = parser.parse_args().BATCH
+    args.epoch = parser.parse_args().EPOCHS
+    args.batch_size = parser.parse_args().BATCH
+    args.cuda = True
+    args.loss_epoch_threshold = 50
+    args.sketch_loss_coefficient = 1.0
+    args.beam_size = 1
+    args.seed = 90
+    args.embed_size = 300
+    args.sentence_features = True
+    args.column_pointer = True
+    args.hidden_size = 300
+    args.lr_scheduler = True
+    args.lr_scheduler_gammar = 0.5
+    args.att_vec_size = 300
 
     main = Main()
     main.deal_with_data()

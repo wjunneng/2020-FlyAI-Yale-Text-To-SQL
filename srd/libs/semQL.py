@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-# 添加distinct
-Keywords = ['des', 'asc', 'and', 'or', 'sum', 'min', 'max', 'avg', 'none', 'distinct', '=', '!=', '<', '>', '<=', '>=',
-            'between',
+Keywords = ['des', 'asc', 'and', 'or', 'sum', 'min', 'max', 'avg', 'none', '=', '!=', '<', '>', '<=', '>=', 'between',
             'like', 'not_like'] + [
                'in', 'not_in', 'count', 'intersect', 'union', 'except'
            ]
@@ -234,8 +232,7 @@ class A(Action):
             2: "A min C",
             3: "A count C",
             4: "A sum C",
-            5: "A avg C",
-            6: "A distinct C"  # 自己添加
+            5: "A avg C"
         }
         self.production_id = {}
         for id_x, value in enumerate(self.grammar_dict.values()):

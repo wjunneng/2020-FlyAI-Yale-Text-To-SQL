@@ -230,9 +230,14 @@ class IRNet(BasicModel):
                 for e_id, example in enumerate(examples):
                     if t < len(example.tgt_actions):
                         action_tm1 = example.tgt_actions[t - 1]
-                        if type(action_tm1) in [define_rule.Root1, define_rule.Root, define_rule.Sel,
-                                                define_rule.Filter, define_rule.Sup, define_rule.N,
-                                                define_rule.Order, ]:
+                        if type(action_tm1) in [define_rule.Root1,
+                                                define_rule.Root,
+                                                define_rule.Sel,
+                                                define_rule.Filter,
+                                                define_rule.Sup,
+                                                define_rule.N,
+                                                define_rule.Order,
+                                                ]:
 
                             a_tm1_embed = self.production_embed.weight[self.grammar.prod2id[action_tm1.production]]
 
@@ -276,14 +281,15 @@ class IRNet(BasicModel):
 
             src_mask = batch.src_token_mask
 
-            (h_t, cell_t), att_t, aw = self.step(x, h_tm1, src_encodings, utterance_encodings_lf_linear,
-                                                 self.lf_decoder_lstm, self.lf_att_vec_linear, src_token_mask=src_mask,
-                                                 return_att_weight=True)
+            (h_t, cell_t), att_t, aw = self.step(x, h_tm1, src_encodings,
+                                                 utterance_encodings_lf_linear, self.lf_decoder_lstm,
+                                                 self.lf_att_vec_linear,
+                                                 src_token_mask=src_mask, return_att_weight=True)
 
             apply_rule_prob = F.softmax(self.production_readout(att_t), dim=-1)
             table_appear_mask_val = torch.from_numpy(table_appear_mask)
             if self.cuda:
-                table_appear_mask_val = table_appear_mask_val.cuda(device=DEVICE)
+                table_appear_mask_val = table_appear_mask_val.cuda()
 
             if self.use_column_pointer:
                 gate = F.sigmoid(self.prob_att(att_t))
@@ -594,7 +600,7 @@ class IRNet(BasicModel):
 
             table_appear_mask_val = torch.from_numpy(table_appear_mask)
 
-            if self.args.cuda: table_appear_mask_val = table_appear_mask_val.cuda(device=DEVICE)
+            if self.args.cuda: table_appear_mask_val = table_appear_mask_val.cuda()
 
             if self.use_column_pointer:
                 gate = F.sigmoid(self.prob_att(att_t))

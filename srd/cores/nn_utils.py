@@ -44,7 +44,7 @@ def length_array_to_mask_tensor(length_array, cuda=False, value=None):
                     mask[b_id][c_id] = 1
 
     mask = torch.ByteTensor(mask)
-    return mask.cuda(device=DEVICE) if cuda else mask
+    return mask.cuda() if cuda else mask
 
 
 def table_dict_to_mask_tensor(length_array, table_dict, cuda=False):
@@ -57,7 +57,7 @@ def table_dict_to_mask_tensor(length_array, table_dict, cuda=False):
             mask[i][tt] = 0
 
     mask = torch.ByteTensor(mask)
-    return mask.cuda(device=DEVICE) if cuda else mask
+    return mask.cuda() if cuda else mask
 
 
 def length_position_tensor(length_array, cuda=False, value=None):
@@ -71,7 +71,7 @@ def length_position_tensor(length_array, cuda=False, value=None):
             mask[b_id][len_c] = len_c + 1
 
     mask = torch.LongTensor(mask)
-    return mask.cuda(device=DEVICE) if cuda else mask
+    return mask.cuda() if cuda else mask
 
 
 def appear_to_mask_tensor(length_array, cuda=False, value=None):
@@ -89,7 +89,7 @@ def pred_col_mask(value, max_len):
         for v in v_val:
             mask[v_ind][v] = 0
     mask = torch.ByteTensor(mask)
-    return mask.cuda(device=DEVICE)
+    return mask.cuda()
 
 
 def input_transpose(sents, pad_token):
@@ -141,7 +141,7 @@ def to_input_variable(sequences, vocab, cuda=False, training=True):
         with torch.no_grad():
             sents_var = Variable(torch.LongTensor(sents_t), requires_grad=False)
         if cuda:
-            sents_var = sents_var.cuda(device=DEVICE)
+            sents_var = sents_var.cuda()
     else:
         sents_var = sents_t
 
@@ -227,5 +227,5 @@ def pad_matrix(matrixs, cuda=False):
             tensors.append(torch.as_tensor(m, dtype=torch.float))
     tensors = torch.stack(tensors)
     if cuda:
-        tensors = tensors.cuda(device=DEVICE)
+        tensors = tensors.cuda()
     return tensors

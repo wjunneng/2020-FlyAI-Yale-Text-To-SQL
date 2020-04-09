@@ -78,7 +78,7 @@ class BasicModel(nn.Module):
 
         val_inp = torch.from_numpy(val_emb_array)
         if self.args.cuda:
-            val_inp = val_inp.cuda(device=DEVICE)
+            val_inp = val_inp.cuda()
         val_inp_var = Variable(val_inp)
         return val_inp_var
 
@@ -137,7 +137,7 @@ class BasicModel(nn.Module):
                 val_emb_array[i, t, :] = val_embs[i][t]
         val_inp = torch.from_numpy(val_emb_array)
         if self.args.cuda:
-            val_inp = val_inp.cuda(device=DEVICE)
+            val_inp = val_inp.cuda()
         return val_inp
 
     def save(self, path):
