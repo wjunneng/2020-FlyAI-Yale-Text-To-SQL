@@ -83,8 +83,10 @@ def schema_linking(question_arg, question_arg_type, one_hot_type, col_set_type, 
                 col_set_type[col_set_iter.index(question_arg[count_q])][1] = 5
                 question_arg[count_q] = ['column'] + question_arg[count_q]
             except:
-                print(col_set_iter, question_arg[count_q])
-                raise RuntimeError("not in col set")
+                # 自行修改
+                continue
+                # print(col_set_iter, question_arg[count_q])
+                # raise RuntimeError("not in col set")
         elif t == 'agg':
             one_hot_type[count_q][2] = 1
         elif t == 'MORE':
@@ -111,6 +113,52 @@ def schema_linking(question_arg, question_arg_type, one_hot_type, col_set_type, 
                     if col_probase == 'asd':
                         continue
                     col_set_type[sql['col_set'].index(col_probase)][3] += 1
+
+
+# def process(sql, table):
+#     process_dict = {}
+#
+#     table_names = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in
+#                    table['table_names_original']]
+#
+#     sql['pre_sql'] = copy.deepcopy(sql)
+#
+#     before = -1
+#     index = -1
+#     tab_cols, tab_ids = [], []
+#     for item in table['column_names_original']:
+#         id = item[0]
+#         col = item[1]
+#         if col not in tab_cols:
+#             tab_cols.append(col)
+#             if id == before:
+#                 tab_ids.append(index)
+#             else:
+#                 index += 1
+#                 tab_ids.append(index)
+#             before = id
+#
+#     col_set_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in tab_cols]
+#     col_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(" ")] for x in tab_cols]
+#     q_iter_small = [wordnet_lemmatizer.lemmatize(x).lower() for x in sql['question_toks']]
+#     question_arg = copy.deepcopy(sql['question_arg'])
+#     question_arg_type = sql['question_arg_type']
+#     one_hot_type = np.zeros((len(question_arg_type), 6))
+#
+#     col_set_type = np.zeros((len(col_set_iter), 4))
+#
+#     process_dict['col_set_iter'] = col_set_iter
+#     process_dict['q_iter_small'] = q_iter_small
+#     process_dict['col_set_type'] = col_set_type
+#     process_dict['question_arg'] = question_arg
+#     process_dict['question_arg_type'] = question_arg_type
+#     process_dict['one_hot_type'] = one_hot_type
+#     process_dict['tab_cols'] = tab_cols
+#     process_dict['tab_ids'] = tab_ids
+#     process_dict['col_iter'] = col_iter
+#     process_dict['table_names'] = table_names
+#
+#     return process_dict
 
 
 def process(sql, table):

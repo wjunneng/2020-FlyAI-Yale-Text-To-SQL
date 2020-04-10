@@ -347,7 +347,7 @@ class Main(object):
             # eg.'what is the number of different channel owners?'
             question = input_data.iloc[index, 1]
             # eg.'select count(distinct owner) from channel'
-            query = input_data.iloc[index, 2]
+            # query = input_data.iloc[index, 2]
             # table
             table = input_tables[db_id]
 
@@ -358,41 +358,42 @@ class Main(object):
             sample['question_arg'] = [[i.lower()] for i in sample['question_toks']]
             sample['table_names'] = table['table_names_original']
 
-            # ################## query 待优化 存在 "count ( t4.paperid )" 的情况
-            query_list = query.strip(';').split(' ')
-            while '' in query_list:
-                query_list.remove('')
-            sample['query'] = query
-
-            # ################## col_set
-            col_set = []
-            for i in table['column_names_original']:
-                if i[1] not in col_set:
-                    col_set.append(i[1])
-            sample['col_set'] = col_set
-
-            # ################## question_arg_type 待优化
-            tmp = []
-            for char in sample['question_arg']:
-                char = char[0]
-                if char == query_list[query_list.index('from') + 1]:
-                    tmp.append(['table'])
-                else:
-                    tmp.append(['NONE'])
-            sample['question_arg_type'] = tmp
-            assert len(sample['question_arg']) == len(sample['question_arg_type'])
-
-            # ################## rule_table
-            with open('../data/query_rule.json', mode='r', encoding='utf-8') as file:
-                query_rule_able = json.load(file)
-
-            if sample['query'] in query_rule_able:
-                # print('query->rule_table: {}'.format(query))
-                sample['rule_label'] = query_rule_able[sample['query']].strip()
-            else:
-                count += 1
-                sample['rule_label'] = Main.generate_rule_label(query=query, query_list=query_list, col_set=col_set,
-                                                                table_names=sample['table_names'])
+            # # ################## query 待优化 存在 "count ( t4.paperid )" 的情况
+            # query_list = query.strip(';').split(' ')
+            # while '' in query_list:
+            #     query_list.remove('')
+            # sample['query'] = query
+            #
+            # # ################## col_set
+            # col_set = []
+            # for i in table['column_names_original']:
+            #     if i[1] not in col_set:
+            #         col_set.append(i[1])
+            # sample['col_set'] = col_set
+            #
+            # # ################## question_arg_type 待优化
+            # tmp = []
+            # for char in sample['question_arg']:
+            #     char = char[0]
+            #     if char == query_list[query_list.index('from') + 1]:
+            #         tmp.append(['table'])
+            #     else:
+            #         tmp.append(['NONE'])
+            # sample['question_arg_type'] = tmp
+            # assert len(sample['question_arg']) == len(sample['question_arg_type'])
+            #
+            # # ################## rule_table
+            # # with open(os.path.join(args.data_path, 'contrast_question.json'), mode='r', encoding='utf-8') as file:
+            # #     contrast = json.load(file)
+            # #
+            # # if sample['question'] in contrast:
+            # #     # print('query->rule_table: {}'.format(query))
+            # #     # sample['rule_label'] = contrast[sample['question']][-1].strip()
+            # #     continue
+            # # else:
+            # count += 1
+            # sample['rule_label'] = Main.generate_rule_label(query=query, query_list=query_list, col_set=col_set,
+            #                                                 table_names=sample['table_names'])
             result.append(sample)
 
         print(count)
@@ -402,7 +403,7 @@ class Main(object):
     def generate_sample_1(input_data, input_tables):
         result = []
 
-        with open(file='data/contrast.json', encoding='utf-8', mode='r') as file:
+        with open(file='data/contrast_question.json', encoding='utf-8', mode='r') as file:
             contrast = json.load(fp=file)
 
         count = 0
@@ -413,18 +414,19 @@ class Main(object):
             db_id = input_data.iloc[index, 0]
             # eg.'what is the number of different channel owners?'
             question = input_data.iloc[index, 1]
-            # eg.'select count(distinct owner) from channel'
-            query = input_data.iloc[index, 2]
-            # # table
-            # table = input_tables[db_id]
 
-            if query in contrast:
+            if question in contrast:
                 sample['db_id'], sample['question'], sample['question_toks'], sample['question_arg'], sample[
                     'question_arg_type'], sample['query'], sample['table_names'], sample['col_set'], sample[
                     'rule_label'] = \
-                    contrast[query]
+                    contrast[question]
 
-                sample['db_id'] = db_id
+                sample['question'] = sample['question'].lower()
+
+                if sample['db_id'] != db_id:
+                    count += 1
+                    continue
+
                 result.append(sample)
             else:
                 count += 1
@@ -438,7 +440,7 @@ class Main(object):
         :return:
         """
         # 表数据
-        self.tables = json.load(fp=open('data/table.json'))
+        self.tables = json.load(fp=open('data/tables.json'))
         self.tables = dict(zip([i['db_id'] for i in self.tables], self.tables))
         # 加载数据
         self.data = pd.read_csv(os.path.join('data/train.csv'))
@@ -495,7 +497,7 @@ class Main(object):
             with open(os.path.join(model_save_path, 'epoch.log'), 'w') as epoch_fd:
                 for epoch in tqdm.tqdm(range(args.epoch)):
                     if args.lr_scheduler:
-                        scheduler.step()
+                        scheduler.step(epoch=epoch)
                     epoch_begin = time.time()
                     loss = utils.epoch_train(model, optimizer, args.batch_size, self.train_data, self.tables, args,
                                              loss_epoch_threshold=args.loss_epoch_threshold,
@@ -552,6 +554,9 @@ if __name__ == '__main__':
     args.lr_scheduler = True
     args.lr_scheduler_gammar = 0.5
     args.att_vec_size = 300
+
+    args.data_path = './data'
+    args.glove_embed_path = './data/glove.42B.300d.txt'
 
     main = Main()
     main.deal_with_data()
