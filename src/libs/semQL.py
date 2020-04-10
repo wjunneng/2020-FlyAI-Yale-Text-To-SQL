@@ -1,7 +1,14 @@
-# -*- coding: utf-8 -*-
-Keywords = ['des', 'asc', 'and', 'or', 'sum', 'min', 'max', 'avg', 'none', '=', '!=', '<', '>', '<=', '>=', 'between', 'like', 'not_like'] + [
-    'in', 'not_in', 'count', 'intersect', 'union', 'except'
-]
+# -*- coding:utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import os
+import sys
+
+os.chdir(sys.path[0])
+
+Keywords = ['des', 'asc', 'and', 'or', 'sum', 'min', 'max', 'avg', 'none', '=', '!=', '<', '>', '<=', '>=', 'between',
+            'like', 'not_like'] + [
+               'in', 'not_in', 'count', 'intersect', 'union', 'except'
+           ]
 
 
 class Grammar(object):
@@ -140,6 +147,7 @@ class N(Action):
     """
     Number of Columns
     """
+
     def __init__(self, id_c, parent=None):
         super(N, self).__init__()
         self.parent = parent
@@ -168,10 +176,12 @@ class N(Action):
     def __repr__(self):
         return 'N(' + str(self.id_c) + ')'
 
+
 class C(Action):
     """
     Column
     """
+
     def __init__(self, id_c, parent=None):
         super(C, self).__init__()
         self.parent = parent
@@ -190,6 +200,7 @@ class T(Action):
     """
     Table
     """
+
     def __init__(self, id_c, parent=None):
         super(T, self).__init__()
 
@@ -209,6 +220,7 @@ class A(Action):
     """
     Aggregator
     """
+
     def __init__(self, id_c, parent=None):
         super(A, self).__init__()
 
@@ -245,6 +257,7 @@ class Sel(Action):
     """
     Select
     """
+
     def __init__(self, id_c, parent=None):
         super(Sel, self).__init__()
 
@@ -270,10 +283,12 @@ class Sel(Action):
     def __repr__(self):
         return 'Sel(' + str(self.id_c) + ')'
 
+
 class Filter(Action):
     """
     Filter
     """
+
     def __init__(self, id_c, parent=None):
         super(Filter, self).__init__()
 
@@ -327,6 +342,7 @@ class Sup(Action):
     """
     Superlative
     """
+
     def __init__(self, id_c, parent=None):
         super(Sup, self).__init__()
 
@@ -358,6 +374,7 @@ class Order(Action):
     """
     Order
     """
+
     def __init__(self, id_c, parent=None):
         super(Order, self).__init__()
 

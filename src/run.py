@@ -19,10 +19,10 @@ from torch import optim
 from nltk.stem import WordNetLemmatizer
 from sklearn.model_selection import train_test_split
 
-from srd.confs.arguments import init_arg_parser, init_config
-from srd.libs import utils
-from srd.cores.model import IRNet
-from srd.libs import semQL
+from src.confs.arguments import init_arg_parser, init_config
+from src.libs import utils
+from src.cores.model import IRNet
+from src.libs import semQL
 
 wordnet_lemmatizer = WordNetLemmatizer()
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -403,7 +403,7 @@ class Main(object):
     def generate_sample_1(input_data, input_tables):
         result = []
 
-        with open(file='data/contrast_question.json', encoding='utf-8', mode='r') as file:
+        with open(file='../data_yan/contrast_question.json', encoding='utf-8', mode='r') as file:
             contrast = json.load(fp=file)
 
         count = 0
@@ -440,10 +440,10 @@ class Main(object):
         :return:
         """
         # 表数据
-        self.tables = json.load(fp=open('data/tables.json'))
+        self.tables = json.load(fp=open('../data_yan/tables.json'))
         self.tables = dict(zip([i['db_id'] for i in self.tables], self.tables))
         # 加载数据
-        self.data = pd.read_csv(os.path.join('data/train.csv'))
+        self.data = pd.read_csv(os.path.join('../data_yan/train.csv'))
         # 划分训练集、测试集
         train_data, valid_data = train_test_split(self.data, test_size=0.2, random_state=6, shuffle=True)
 
@@ -555,8 +555,8 @@ if __name__ == '__main__':
     args.lr_scheduler_gammar = 0.5
     args.att_vec_size = 300
 
-    args.data_path = './data'
-    args.glove_embed_path = './data/glove.42B.300d.txt'
+    args.data_path = '../data_yan'
+    args.glove_embed_path = '../data_yan/glove.42B.300d.txt'
 
     main = Main()
     main.deal_with_data()

@@ -1,4 +1,10 @@
-# -*- coding: utf-8 -*-
+# -*- coding:utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import os
+import sys
+
+os.chdir(sys.path[0])
+
 import torch.nn.functional as F
 import torch.nn.init as init
 import numpy as np

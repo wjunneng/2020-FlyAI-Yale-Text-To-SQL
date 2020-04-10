@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# -*- coding:utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import os
+import sys
+
+os.chdir(sys.path[0])
 
 import random
 import argparse
@@ -26,17 +31,12 @@ def init_arg_parser():
                             help='use sentence features')
     arg_parser.add_argument('--model_name', choices=['transformer', 'rnn', 'table', 'sketch'], default='rnn',
                             help='model name')
-
     arg_parser.add_argument('--lstm', choices=['lstm', 'lstm_with_dropout', 'parent_feed'], default='lstm',
                             help='lstm type')
-
     arg_parser.add_argument('--load_model', default=None, type=str,
                             help='load a pre-trained model')
-    arg_parser.add_argument('--glove_embed_path',
-                            default="/home/wjunneng/Ubuntu/2020-FlyAI-Yale-Text-To-SQL/data/input/model/glove.42B.300d.txt",
-                            type=str,
+    arg_parser.add_argument('--glove_embed_path', default="", type=str,
                             help='glove embed path')
-
     arg_parser.add_argument('--batch_size', default=64, type=int,
                             help='batch size')
     arg_parser.add_argument('--beam_size', default=5, type=int,
@@ -45,7 +45,6 @@ def init_arg_parser():
                             help='size of word embeddings')
     arg_parser.add_argument('--col_embed_size', default=300, type=int,
                             help='size of word embeddings')
-
     arg_parser.add_argument('--action_embed_size', default=128, type=int,
                             help='size of word embeddings')
     arg_parser.add_argument('--type_embed_size', default=128, type=int,
@@ -67,7 +66,6 @@ def init_arg_parser():
 
     arg_parser.add_argument('--decode_max_time_step', default=40, type=int,
                             help='maximum number of time steps used in decoding and sampling')
-
     arg_parser.add_argument('--save_to', default='model', type=str,
                             help='save trained model to')
     arg_parser.add_argument('--toy', action='store_true',
@@ -80,13 +78,11 @@ def init_arg_parser():
                             help='optimizer')
     arg_parser.add_argument('--lr', default=0.001, type=float,
                             help='learning rate')
-
-    arg_parser.add_argument('--dataset', default="./data", type=str,
+    arg_parser.add_argument('--dataset', default="", type=str,
                             help='dataset path')
-
     arg_parser.add_argument('--epoch', default=50, type=int,
                             help='Maximum Epoch')
-    arg_parser.add_argument('--save', default='./', type=str,
+    arg_parser.add_argument('--save', default='', type=str,
                             help="Path to save the checkpoint and logs of epoch")
 
     return arg_parser

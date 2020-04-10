@@ -13,10 +13,10 @@ import argparse
 import pandas as pd
 
 from srd.libs import utils
-from srd.cores.model import IRNet
+from src.cores.model import IRNet
 from srd.libs import semQL
 from srd.confs.arguments import init_arg_parser, init_config
-from srd.run import Main
+from src.run import Main
 
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -87,8 +87,8 @@ if __name__ == '__main__':
     args.lr_scheduler = True
     args.lr_scheduler_gammar = 0.5
     args.att_vec_size = 300
-    args.glove_embed_path = './data/glove.42B.300d.txt'
-    args.data_path = './data'
+    args.glove_embed_path = '../data_yan/glove.42B.300d.txt'
+    args.data_path = '../data_yan'
     args.load_model = './saved_model/1586480029/best_model.model'
     args.input_path = 'predict_lf.json'
     args.output_path = 'irnet'

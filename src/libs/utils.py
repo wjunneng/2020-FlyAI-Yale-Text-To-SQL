@@ -1,4 +1,10 @@
-# -*- coding: utf-8 -*-
+# -*- coding:utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import os
+import sys
+
+os.chdir(sys.path[0])
+
 import json
 import time
 
@@ -77,8 +83,10 @@ def schema_linking(question_arg, question_arg_type, one_hot_type, col_set_type, 
                 col_set_type[col_set_iter.index(question_arg[count_q])][1] = 5
                 question_arg[count_q] = ['column'] + question_arg[count_q]
             except:
-                print(col_set_iter, question_arg[count_q])
-                raise RuntimeError("not in col set")
+                # 自行修改
+                continue
+                # print(col_set_iter, question_arg[count_q])
+                # raise RuntimeError("not in col set")
         elif t == 'agg':
             one_hot_type[count_q][2] = 1
         elif t == 'MORE':
@@ -107,45 +115,81 @@ def schema_linking(question_arg, question_arg_type, one_hot_type, col_set_type, 
                     col_set_type[sql['col_set'].index(col_probase)][3] += 1
 
 
+# def process(sql, table):
+#     process_dict = {}
+#
+#     table_names = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in
+#                    table['table_names_original']]
+#
+#     sql['pre_sql'] = copy.deepcopy(sql)
+#
+#     before = -1
+#     index = -1
+#     tab_cols, tab_ids = [], []
+#     for item in table['column_names_original']:
+#         id = item[0]
+#         col = item[1]
+#         if col not in tab_cols:
+#             tab_cols.append(col)
+#             if id == before:
+#                 tab_ids.append(index)
+#             else:
+#                 index += 1
+#                 tab_ids.append(index)
+#             before = id
+#
+#     col_set_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in tab_cols]
+#     col_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(" ")] for x in tab_cols]
+#     q_iter_small = [wordnet_lemmatizer.lemmatize(x).lower() for x in sql['question_toks']]
+#     question_arg = copy.deepcopy(sql['question_arg'])
+#     question_arg_type = sql['question_arg_type']
+#     one_hot_type = np.zeros((len(question_arg_type), 6))
+#
+#     col_set_type = np.zeros((len(col_set_iter), 4))
+#
+#     process_dict['col_set_iter'] = col_set_iter
+#     process_dict['q_iter_small'] = q_iter_small
+#     process_dict['col_set_type'] = col_set_type
+#     process_dict['question_arg'] = question_arg
+#     process_dict['question_arg_type'] = question_arg_type
+#     process_dict['one_hot_type'] = one_hot_type
+#     process_dict['tab_cols'] = tab_cols
+#     process_dict['tab_ids'] = tab_ids
+#     process_dict['col_iter'] = col_iter
+#     process_dict['table_names'] = table_names
+#
+#     return process_dict
+
+
 def process(sql, table):
     process_dict = {}
-    table_names = [[table['name']]]  # 注意
+
+    origin_sql = sql['question_toks']
+    table_names = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in table['table_names']]
 
     sql['pre_sql'] = copy.deepcopy(sql)
 
-    col_set_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x] for x in table['header_tok']]
-    col_set_type = np.zeros((len(col_set_iter), 4))
-    q_iter_small = [wordnet_lemmatizer.lemmatize(x).lower() for x in sql['question_tok']]
-    question_arg = [[i] for i in q_iter_small]
+    tab_cols = [col[1] for col in table['column_names']]
+    tab_ids = [col[0] for col in table['column_names']]
 
-    question_arg_type = [['NONE'] if i == '' else i for i in sql['question_tok_space']]
+    col_set_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(' ')] for x in sql['col_set']]
+    col_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x.split(" ")] for x in tab_cols]
+    q_iter_small = [wordnet_lemmatizer.lemmatize(x).lower() for x in origin_sql]
+    question_arg = copy.deepcopy(sql['question_arg'])
+    question_arg_type = sql['question_arg_type']
     one_hot_type = np.zeros((len(question_arg_type), 6))
-    tab_cols = []
-    tab_ids = []
-    for index in range(len(table['header_tok'])):
-        tab_cols.append(table['header_tok'][index])
-        tab_ids.append(index)
-    col_iter = [[wordnet_lemmatizer.lemmatize(v).lower() for v in x] for x in tab_cols]
 
-    # 存在
+    col_set_type = np.zeros((len(col_set_iter), 4))
+
     process_dict['col_set_iter'] = col_set_iter
-    # 存在
     process_dict['q_iter_small'] = q_iter_small
-    # 存在
     process_dict['col_set_type'] = col_set_type
-    # 存在
     process_dict['question_arg'] = question_arg
-    # 构造
     process_dict['question_arg_type'] = question_arg_type
-    # 构造
     process_dict['one_hot_type'] = one_hot_type
-    # 构造
     process_dict['tab_cols'] = tab_cols
-    # 构造
     process_dict['tab_ids'] = tab_ids
-    # 构造
     process_dict['col_iter'] = col_iter
-    # 构造
     process_dict['table_names'] = table_names
 
     return process_dict
@@ -178,7 +222,7 @@ def to_batch_seq(sql_data, table_data, idxes, st, ed,
 
     for i in range(st, ed):
         sql = sql_data[idxes[i]]
-        table = table_data[sql['table_id']]
+        table = table_data[sql['db_id']]
 
         process_dict = process(sql, table)
 
@@ -337,7 +381,7 @@ def load_data_new(sql_path, table_data, use_small=False):
 def load_dataset(dataset_dir, use_small=False):
     print("Loading from datasets...")
 
-    TABLE_PATH = os.path.join(dataset_dir, "tables.json")
+    TABLE_PATH = os.path.join(dataset_dir, "table.json")
     TRAIN_PATH = os.path.join(dataset_dir, "train.json")
     DEV_PATH = os.path.join(dataset_dir, "dev.json")
     with open(TABLE_PATH) as inf:

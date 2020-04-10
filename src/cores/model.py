@@ -1,4 +1,10 @@
-# -*- coding: utf-8 -*-
+# -*- coding:utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import os
+import sys
+
+os.chdir(sys.path[0])
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -600,8 +606,7 @@ class IRNet(BasicModel):
 
             table_appear_mask_val = torch.from_numpy(table_appear_mask)
 
-            if self.args.cuda:
-                table_appear_mask_val = table_appear_mask_val.cuda(device=DEVICE)
+            if self.args.cuda: table_appear_mask_val = table_appear_mask_val.cuda(device=DEVICE)
 
             if self.use_column_pointer:
                 gate = F.sigmoid(self.prob_att(att_t))
