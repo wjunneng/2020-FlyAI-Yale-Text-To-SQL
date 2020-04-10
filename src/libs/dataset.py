@@ -8,7 +8,7 @@ os.chdir(sys.path[0])
 import copy
 
 import src.libs.semQL as define_rule
-from src.cores import nn_utils
+from src.libs import nn_utils
 
 
 class Example:

@@ -14,10 +14,9 @@ from torch.autograd import Variable
 
 from src.libs.beam import Beams, ActionInfo
 from src.libs.dataset import Batch
-from src.cores import nn_utils
 from src.cores.basic_model import BasicModel
 from src.cores.pointer_net import PointerNet
-from src.libs import semQL as define_rule
+from src.libs import semQL as define_rule, nn_utils
 
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
