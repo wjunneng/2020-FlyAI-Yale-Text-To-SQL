@@ -405,8 +405,6 @@ def save_args(args, path):
 
 def init_log_checkpoint_path(args):
     save_path = args.save
-    dir_name = save_path + str(int(time.time()))
-    save_path = os.path.join(os.path.curdir, 'saved_model', dir_name)
     if os.path.exists(save_path) is False:
         os.makedirs(save_path)
     return save_path

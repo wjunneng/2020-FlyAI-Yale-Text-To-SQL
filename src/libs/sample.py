@@ -381,7 +381,7 @@ class Sample(object):
         return result
 
     @staticmethod
-    def generate_sample_std(input_data, input_contrast_question='../data_yan/contrast_question.json'):
+    def generate_sample_std(input_data, input_contrast_question):
         result = []
 
         with open(file=input_contrast_question, encoding='utf-8', mode='r') as file:
@@ -414,5 +414,15 @@ class Sample(object):
             else:
                 count += 1
 
-        print("忽略了: %s 条样本".format(count))
+        # ########## step 1 ##########
+        # # 训练集
+        # 忽略了: 1608 条样本
+
+        # # 验证集
+        # 忽略了: 388 条样本
+
+        # # 测试集
+        # 忽略了: 497 条样本
+        # ########## step 1 ##########
+        print("忽略了: {} 条样本".format(count))
         return result

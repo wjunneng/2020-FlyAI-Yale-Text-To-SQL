@@ -35,15 +35,16 @@ class Main(object):
         self.tables = json.load(fp=open(self.args.tables_json_path), encoding='utf-8')
         self.tables = dict(zip([i['db_id'] for i in self.tables], self.tables))
 
-    def deal_with_data(self):
+    def train(self):
         """
-        处理数据，没有可不写。
+        训练
         :return:
         """
         # 加载数据
-        self.data = pd.read_csv(self.args.train_csv_path, encoding='utf-8')
+        data = pd.read_csv(self.args.train_csv_path, encoding='utf-8')
         # 划分训练集、测试集
-        train_data, valid_data = train_test_split(self.data, test_size=0.2, random_state=6, shuffle=True)
+        train_data, valid_data = train_test_split(data, test_size=0.2, random_state=6,
+                                                  shuffle=True)
         # 训练集
         self.train_data = Sample.generate_sample_std(input_data=train_data,
                                                      input_contrast_question=self.args.contrast_question_json_path)
@@ -52,11 +53,6 @@ class Main(object):
                                                      input_contrast_question=self.args.contrast_question_json_path)
         print('=*=数据处理完成=*=')
 
-    def train(self):
-        """
-        训练
-        :return:
-        """
         grammar = semQL.Grammar()
         model = IRNet(self.args, grammar)
 
@@ -140,7 +136,7 @@ class Main(object):
         data = pd.read_csv(self.args.test_csv_path, encoding='utf-8')
         data = Sample.generate_sample_std(input_data=data,
                                           input_contrast_question=self.args.contrast_question_json_path)
-
+        print('=*=数据处理完成=*=')
         grammar = semQL.Grammar()
         model = IRNet(self.args, grammar)
 
@@ -194,15 +190,18 @@ if __name__ == '__main__':
     args.att_vec_size = 300
 
     args.project_dir = os.path.abspath('..')
-    args.data_yan_dir = os.path.join(args.data_yan_dir, 'data_yan')
+    args.data_yan_dir = os.path.join(args.project_dir, 'data_yan')
     args.glove_embed_path = os.path.join(args.data_yan_dir, 'glove.42B.300d.txt')
     args.tables_json_path = os.path.join(args.data_yan_dir, 'tables.json')
     args.train_csv_path = os.path.join(args.data_yan_dir, 'train.csv')
     args.test_csv_path = os.path.join(args.data_yan_dir, 'test.csv')
     args.result_csv_path = os.path.join(args.data_yan_dir, 'result.csv')
+    args.save = os.path.join(args.data_yan_dir, 'saved_model')
+    args.contrast_question_json_path = os.path.join(args.data_yan_dir, 'contrast_question.json')
+    # args.pretrained_model = os.path.join(args.data_yan_dir, 'IRNet_pretrained.model')
+    args.load_model = os.path.join(args.save, 'best_model.model')
 
     main = Main(args=args)
-    main.deal_with_data()
-    main.train()
+    # main.train()
 
     main.evaluate()
