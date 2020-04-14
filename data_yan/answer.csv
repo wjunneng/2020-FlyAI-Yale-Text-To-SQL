@@ -43,7 +43,7 @@
 42,"select city ,  count(*) from branch where open_year  <  2010 group by city"
 43,select author from submission order by scores desc limit 1
 44,select salary from salary where year  =  2001 order by salary desc limit 3;
-45,
+45,select count(*) from student
 46,select name from airports where country  =  'cuba' or country  =  'argentina'
 47,"select t1.name ,  t1.num_employees from department as t1 join management as t2 on t1.department_id  =  t2.department_id where t2.temporary_acting  =  'yes'"
 48,select poll_source from candidate group by poll_source order by count(*) desc limit 1
@@ -254,7 +254,7 @@
 253,
 254,
 255,
-256,
+256,select count(*) from flight
 257,select t1.school_code from department as t1 join professor as t2 on t1.dept_code  =  t2.dept_code group by t1.school_code order by count(*) limit 1
 258,select title from course where course_id not in (select course_id from prereq)
 259,select t2.roomname from reservations as t1 join rooms as t2 on t1.room  =  t2.roomid group by t1.room order by count(*) desc limit 1;
@@ -532,7 +532,7 @@
 531,
 532,"select t1.date_of_enrolment from student_course_enrolment as t1 join student_tests_taken as t2 on t1.registration_id  =  t2.registration_id where t2.test_result  =  ""pass"""
 533,select bname from bank where state  =  'new york'
-534,
+534,select count(*) from products
 535,"select avg(t1.age) ,  t3.dorm_name from student as t1 join lives_in as t2 on t1.stuid  =  t2.stuid join dorm as t3 on t3.dormid  =  t2.dormid group by t3.dorm_name"
 536,select avg(t2.number_cities) from film_market_estimation as t1 join market as t2 on t1.market_id  =  t2.market_id where t1.low_estimate  >  10000
 537,select last_name from customers intersect select last_name from staff
@@ -544,7 +544,7 @@
 543,select name from technician where age  =  36 or age  =  37
 544,"select customer_status_code , count(*) from customers group by customer_status_code;"
 545,select count(distinct dormid) from has_amenity
-546,
+546,select count(*) from course
 547,"select room from faculty where rank  =  ""professor"" and building  =  ""neb"""
 548,
 549,select distinct t1.player_name from player as t1 join player_attributes as t2 on t1.player_api_id = t2.player_api_id where t2.overall_rating  >  ( select avg(overall_rating) from player_attributes )
@@ -709,7 +709,7 @@
 708,
 709,"select state_name from state where area  =  ( select max ( area ) from state where state_name in ( select border from border_info where state_name  =  ""california"" ) ) and state_name in ( select border from border_info where state_name  =  ""california"" );"
 710,select state_name from state where area  =  ( select max ( area ) from state where state_name in ( select state_name from border_info where border in ( select state_name from state where population  =  ( select max ( population ) from state ) ) ) ) and state_name in ( select state_name from border_info where border in ( select state_name from state where population  =  ( select max ( population ) from state ) ) );
-711,
+711,select count(*) from school
 712,"select t1.allergy ,  t1.allergytype from allergy_type as t1 join has_allergy as t2 on t1.allergy  =  t2.allergy join student as t3 on t3.stuid  =  t2.stuid where t3.fname  =  ""lisa"" order by t1.allergy"
 713,select t1.fname from student as t1 join lives_in as t2 on t1.stuid  =  t2.stuid where t2.dormid in (select t2.dormid from dorm as t3 join has_amenity as t4 on t3.dormid  =  t4.dormid join dorm_amenity as t5 on t4.amenid  =  t5.amenid group by t3.dormid order by count(*) desc limit 1)
 714,"select product_type_code ,  avg(product_price) from products group by product_type_code"
@@ -964,7 +964,7 @@
 963,
 964,"select festival_name ,  location from festival_detail"
 965,"select investor_id ,  count(*) from transactions where transaction_type_code  =  ""sale"" group by investor_id"
-966,
+966,select count(*) from customers
 967,
 968,select distinct t1.bname from bank as t1 join loan as t2 on t1.branch_id  =  t2.branch_id
 969,select count(*) from addresses where country  =  'usa'

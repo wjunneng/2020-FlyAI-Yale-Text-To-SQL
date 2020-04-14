@@ -3,3 +3,20 @@
 
 
 # aggregator:agg | selection:sel | where:conds
+
+## AI研习社
+
+    原始：
+    # 忽略db_id不匹配的样本 if sample['db_id'] != db_id:
+    
+    # 训练集 忽略了: 1608 条样本
+    # 验证集 忽略了: 388 条样本
+    # 测试集 忽略了: 497 条样本
+    score: 74.3682
+    
+    
+    # 忽略db_id不存在的样本 if sample['db_id'] not in table_data:
+    # 训练集 忽略了: 1590 条样本
+    # 验证集 忽略了: 383 条样本
+    # 测试集 忽略了: 491 条样本
+    score: 74.5229

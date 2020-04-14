@@ -381,7 +381,7 @@ class Sample(object):
         return result
 
     @staticmethod
-    def generate_sample_std(input_data, input_contrast_question):
+    def generate_sample_std(input_data, table_data, input_contrast_question):
         result = []
 
         with open(file=input_contrast_question, encoding='utf-8', mode='r') as file:
@@ -406,7 +406,12 @@ class Sample(object):
                 sample['question'] = sample['question'].lower()
 
                 # 忽略db_id不匹配的样本
-                if sample['db_id'] != db_id:
+                # if sample['db_id'] != db_id:
+                #     count += 1
+                #     continue
+
+                # 忽略db_id不存在的样本
+                if sample['db_id'] not in table_data:
                     count += 1
                     continue
 

@@ -46,12 +46,13 @@ class Main(object):
         train_data, valid_data = train_test_split(data, test_size=0.2, random_state=6,
                                                   shuffle=True)
         # 训练集
-        self.train_data = Sample.generate_sample_std(input_data=train_data,
+        self.train_data = Sample.generate_sample_std(input_data=train_data, table_data=self.tables,
                                                      input_contrast_question=self.args.contrast_question_json_path)
         # 测试集
-        self.valid_data = Sample.generate_sample_std(input_data=valid_data,
+        self.valid_data = Sample.generate_sample_std(input_data=valid_data, table_data=self.tables,
                                                      input_contrast_question=self.args.contrast_question_json_path)
         print('=*=数据处理完成=*=')
+        self.args.load_model = self.args.pretrained_model
 
         grammar = semQL.Grammar()
         model = IRNet(self.args, grammar)
@@ -134,7 +135,7 @@ class Main(object):
         """
         # 加载数据
         data = pd.read_csv(self.args.test_csv_path, encoding='utf-8')
-        data = Sample.generate_sample_std(input_data=data,
+        data = Sample.generate_sample_std(input_data=data, table_data=self.tables,
                                           input_contrast_question=self.args.contrast_question_json_path)
         print('=*=数据处理完成=*=')
         grammar = semQL.Grammar()
@@ -198,10 +199,10 @@ if __name__ == '__main__':
     args.result_csv_path = os.path.join(args.data_yan_dir, 'result.csv')
     args.save = os.path.join(args.data_yan_dir, 'saved_model')
     args.contrast_question_json_path = os.path.join(args.data_yan_dir, 'contrast_question.json')
-    # args.pretrained_model = os.path.join(args.data_yan_dir, 'IRNet_pretrained.model')
+    args.pretrained_model = os.path.join(args.data_yan_dir, 'IRNet_pretrained.model')
     args.load_model = os.path.join(args.save, 'best_model.model')
 
     main = Main(args=args)
-    # main.train()
+    main.train()
 
     main.evaluate()
