@@ -1,42 +1,46 @@
-# -*- coding: utf-8 -*-
-import argparse
+# -*- coding:utf-8 -*-
+from __future__ import absolute_import, division, print_function
 import os
+import sys
+
+sys.path.append(os.path.abspath('..'))
+os.chdir(sys.path[0])
+
+import time
+import argparse
 import pandas as pd
+import copy
+import torch
+import tqdm
+import traceback
+
+from torch import optim
 from sklearn.model_selection import train_test_split
 from flyai.framework import FlyAI
 from flyai.data_helper import DataHelper
-from flyai.utils import remote_helper
-from customer import *
-from path import MODEL_PATH, DATA_PATH
-import torch
 
-"""
-此项目为FlyAI2.0新版本框架，数据读取，评估方式与之前不同
-2.0框架不再限制数据如何读取
-样例代码仅供参考学习，可以自己修改实现逻辑。
-模版项目下载支持 PyTorch、Tensorflow、Keras、MXNET、scikit-learn等机器学习框架
-第一次使用请看项目中的：FlyAI2.0竞赛框架使用说明.html
-使用FlyAI提供的预训练模型可查看：https://www.flyai.com/models
-学习资料可查看文档中心：https://doc.flyai.com/
-常见问题：https://doc.flyai.com/question.html
-遇到问题不要着急，添加小姐姐微信，扫描项目里面的：FlyAI小助手二维码-小姐姐在线解答您的问题.png
-"""
+from path import TEXTSQL_DIR
+from src.confs import arguments
+from src.libs import utils
+from src.cores.model import IRNet
+from src.libs import semQL
+from src.libs.sample import Sample
 
-# 项目的超参，不使用可以删除
-parser = argparse.ArgumentParser()
-parser.add_argument("-e", "--EPOCHS", default=100, type=int, help="train epochs")
-parser.add_argument("-b", "--BATCH", default=32, type=int, help="batch size")
-args = parser.parse_args()
+DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
 class Main(FlyAI):
     """
     项目中必须继承FlyAI类，否则线上运行会报错。
     """
+
     def download_data(self):
         # 下载数据
         data_helper = DataHelper()
         data_helper.download_from_ids("TextSQL")
+        # 必须使用该方法下载模型，然后加载
+        from flyai.utils import remote_helper
+        remote_helper.get_remote_date('https://www.flyai.com/m/glove.42B.300d.zip')
         # 二选一或者根据app.json的配置下载文件
         # data_helper.download_from_json()
         print('=*=数据下载完成=*=')
@@ -47,87 +51,152 @@ class Main(FlyAI):
         :return:
         """
         # 加载数据
-        self.data = pd.read_csv(os.path.join(DATA_PATH, 'TextSQL/train.csv'))
+        data = pd.read_csv(os.path.join(TEXTSQL_DIR, 'train.csv'))
+
+        sql_data = []
+        self.tables = []
+
+        for index in range(data.shape[0]):
+            tmp = eval(data.iloc[index, 0])
+            tmp['sql'] = eval(data.iloc[index, 2])
+            sql_data.append(tmp)
+            self.tables.append(eval(data.iloc[index, 1]))
+
         # 划分训练集、测试集
-        self.train_data, self.valid_data = train_test_split(self.data, test_size=0.2, random_state=6, shuffle=True)
+        self.train_data, self.valid_data = train_test_split(sql_data, test_size=0.2, random_state=6, shuffle=True)
+
         print('=*=数据处理完成=*=')
 
     def train(self):
-        if not os.path.exists(MODEL_PATH):
-            os.makedirs(MODEL_PATH)
-        # 超参数
-        BATCH_SIZE = args.BATCH
-        TRAIN_ENTRY = (True, True, True)  # (AGG, SEL, COND)
-        TRAIN_AGG, TRAIN_SEL, TRAIN_COND = TRAIN_ENTRY
-        learning_rate = 1e-4
-        if torch.cuda.is_available():
-            GPU = True
+        """
+        训练
+        :return:
+        """
+        grammar = semQL.Grammar()
+        model = IRNet(args, grammar)
+
+        if args.cuda:
+            model.cuda(DEVICE)
+
+        # now get the optimizer
+        optimizer_cls = eval('torch.optim.%s' % args.optimizer)
+        optimizer = optimizer_cls(model.parameters(), lr=args.lr)
+        if args.lr_scheduler:
+            scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[21, 41],
+                                                       gamma=args.lr_scheduler_gammar)
         else:
-            GPU = False
-        # './data/input/model/glove.twitter.27B.zip'
-        path = remote_helper.get_remote_date('https://www.flyai.com/m/glove.twitter.27B.zip')
-        glove_path = os.path.split(path)[0]  # './data/input/model'
-        # word_emb = load_word_emb(os.path.join(glove_path, 'glove.twitter.27B.25d.txt'))
-        word_emb = None
-        sql_model = SQLNet(word_emb, N_word=25, use_ca=True, gpu=GPU)
-        optimizer = torch.optim.Adam(sql_model.parameters(), lr=learning_rate, weight_decay=0)
+            scheduler = None
 
-        agg_m, sel_m, cond_m = best_model_name(MODEL_PATH)
-        if TRAIN_AGG:
-            torch.save(sql_model.agg_pred.state_dict(), agg_m)
+        print('Loss epoch threshold: %d' % args.loss_epoch_threshold)
+        print('Sketch loss coefficient: %f' % args.sketch_loss_coefficient)
 
-        if TRAIN_SEL:
-            torch.save(sql_model.sel_pred.state_dict(), sel_m)
+        if args.load_model:
+            pretrained_model = torch.load(args.load_model, map_location=lambda storage, loc: storage)
+            pretrained_modeled = copy.deepcopy(pretrained_model)
+            for k in pretrained_model.keys():
+                if k not in model.state_dict().keys():
+                    del pretrained_modeled[k]
 
-        if TRAIN_COND:
-            torch.save(sql_model.cond_pred.state_dict(), cond_m)
+            model.load_state_dict(pretrained_modeled)
 
-        # 按批次加载数据
-        best_agg_acc, best_sel_acc, best_cond_acc = 0.0, 0.0, 0.0
-        best_agg_idx, best_sel_idx, best_cond_idx = 0, 0, 0
-        sql_val, table_val = get_val_batch(self.valid_data, batch_size=100)
-        sql_data_v, table_data_v = sql_val
-        sql_v = table_val
-        batch_nums = int(self.train_data.shape[0]/BATCH_SIZE)
-        for epoch in range(args.EPOCHS):
-            for batch_i, (sql_train, table_train) in \
-                    enumerate(get_train_batches(self.train_data, batch_size=BATCH_SIZE)):
-                sql_data_t, table_data_t = sql_train
-                sql_t = table_train
+        model.word_emb = utils.load_word_emb(args.glove_embed_path)
 
-                step_train(sql_model, optimizer, sql_data_t, table_data_t, sql_t, TRAIN_ENTRY)
-                tol_acc_t, one_acc_t = compute_acc(sql_model, sql_data_t, table_data_t, sql_t, TRAIN_ENTRY)
+        # begin train
+        model_save_path = utils.init_log_checkpoint_path(args)
+        utils.save_args(args, os.path.join(model_save_path, 'config.json'))
+        best_dev_acc = .0
 
-                current_steps = 'Epoch: {} | steps: {}/{}'.format(epoch+1, batch_i+1, batch_nums)
-                print('{} | The Total Acc: {} | The One acc: {}'.format(current_steps, tol_acc_t, one_acc_t))
+        try:
+            with open(os.path.join(model_save_path, 'epoch.log'), 'w') as epoch_fd:
+                for epoch in tqdm.tqdm(range(args.epoch)):
+                    if args.lr_scheduler:
+                        scheduler.step(epoch=epoch)
+                    epoch_begin = time.time()
+                    loss = utils.epoch_train(model, optimizer, args.batch_size, self.train_data, self.tables,
+                                             args,
+                                             loss_epoch_threshold=args.loss_epoch_threshold,
+                                             sketch_loss_coefficient=args.sketch_loss_coefficient)
+                    epoch_end = time.time()
+                    json_datas, sketch_acc, acc = utils.epoch_acc(model, args.batch_size, self.valid_data,
+                                                                  self.tables,
+                                                                  beam_size=args.beam_size)
+                    acc = utils.eval_acc(json_datas, self.valid_data)
 
-            tol_acc_v, one_acc_v = compute_acc(sql_model, sql_data_v, table_data_v, sql_v, TRAIN_ENTRY)
-            if TRAIN_AGG:
-                if one_acc_v[0] > best_agg_acc:
-                    best_agg_acc = one_acc_v[0]
-                    best_agg_idx += 1
-                    torch.save(sql_model.agg_pred.state_dict(), agg_m)
+                    if acc > best_dev_acc:
+                        utils.save_checkpoint(model, os.path.join(model_save_path, 'best_model.model'))
+                        best_dev_acc = acc
+                    utils.save_checkpoint(model, os.path.join(model_save_path, '{%s}_{%s}.model') % (epoch, acc))
 
-            if TRAIN_SEL:
-                if one_acc_v[1] > best_sel_acc:
-                    best_sel_acc = one_acc_v[1]
-                    best_sel_idx += 1
-                    torch.save(sql_model.sel_pred.state_dict(), sel_m)
+                    log_str = 'Epoch: %d, Loss: %f, Sketch Acc: %f, Acc: %f, time: %f\n' % (
+                        epoch + 1, loss, sketch_acc, acc, epoch_end - epoch_begin)
+                    tqdm.tqdm.write(log_str)
+                    epoch_fd.write(log_str)
+                    epoch_fd.flush()
+        except Exception as e:
+            # Save model
+            utils.save_checkpoint(model, os.path.join(model_save_path, 'end_model.model'))
+            print(e)
+            tb = traceback.format_exc()
+            print(tb)
+        else:
+            utils.save_checkpoint(model, os.path.join(model_save_path, 'end_model.model'))
+            json_datas, sketch_acc, acc = utils.epoch_acc(model, args.batch_size, self.valid_data, self.tables,
+                                                          beam_size=args.beam_size)
+            acc = utils.eval_acc(json_datas, self.valid_data)
 
-            if TRAIN_COND:
-                if one_acc_v[2] > best_cond_acc:
-                    best_cond_acc = one_acc_v[2]
-                    best_cond_idx += 1
-                    torch.save(sql_model.cond_pred.state_dict(), cond_m)
+            print("Sketch Acc: %f, Acc: %f, Beam Acc: %f" % (sketch_acc, acc, acc,))
 
-            print('Best val acc: %s\nOn epoch individually %s' % (
-                (best_agg_acc, best_sel_acc, best_cond_acc),
-                (best_agg_idx, best_sel_idx, best_cond_idx)))
+    def evaluate(self):
+        """
+        :param args:
+        :return:
+        """
+        # 加载数据
+        data = pd.read_csv(args.test_csv_path, encoding='utf-8')
+        data = Sample.generate_sample_std(input_data=data,
+                                          input_contrast_question=args.contrast_question_json_path)
+        print('=*=数据处理完成=*=')
+        grammar = semQL.Grammar()
+        model = IRNet(args, grammar)
 
-            print('Save Model Done for epoch:[{}]!'.format(epoch + 1))
+        if args.cuda:
+            model.cuda(device=DEVICE)
+
+        pretrained_model = torch.load(args.load_model, map_location=lambda storage, loc: storage)
+        pretrained_modeled = copy.deepcopy(pretrained_model)
+        for k in pretrained_model.keys():
+            if k not in model.state_dict().keys():
+                del pretrained_modeled[k]
+
+        model.load_state_dict(pretrained_modeled)
+        model.word_emb = utils.load_word_emb(args.glove_embed_path)
+        json_datas, sketch_acc, acc = utils.epoch_acc(model=model, batch_size=args.batch_size, sql_data=data,
+                                                      table_data=self.tables, beam_size=args.beam_size)
+
+        question = []
+        query = []
+        for item in json_datas:
+            query.append(item['query'].lower())
+            question.append(item['question'])
+
+        result = pd.DataFrame(data=question, columns=['question'])
+        result['query'] = query
+
+        result.to_csv(path_or_buf=args.result_csv_path, encoding='utf-8', index=False)
 
 
 if __name__ == '__main__':
+    # 项目的超参，不使用可以删除
+    arg_parse = arguments.init_arg_parser()
+    args = arguments.init_config(arg_parse)
+
+    # 项目的超参，不使用可以删除
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-e", "--EPOCHS", default=3, type=int, help="train epochs")
+    parser.add_argument("-b", "--BATCH", default=32, type=int, help="batch size")
+    args.epoch = parser.parse_args().EPOCHS
+    args.batch_size = parser.parse_args().BATCH
+
     main = Main()
     main.download_data()
     main.deal_with_data()

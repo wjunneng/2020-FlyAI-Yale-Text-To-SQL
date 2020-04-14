@@ -49,7 +49,7 @@ class Main(object):
         self.train_data = Sample.generate_sample_std(input_data=train_data,
                                                      input_contrast_question=self.args.contrast_question_json_path)
         # 测试集
-        self.vaild_data = Sample.generate_sample_std(input_data=valid_data,
+        self.valid_data = Sample.generate_sample_std(input_data=valid_data,
                                                      input_contrast_question=self.args.contrast_question_json_path)
         print('=*=数据处理完成=*=')
 
@@ -98,10 +98,10 @@ class Main(object):
                                              loss_epoch_threshold=self.args.loss_epoch_threshold,
                                              sketch_loss_coefficient=self.args.sketch_loss_coefficient)
                     epoch_end = time.time()
-                    json_datas, sketch_acc, acc = utils.epoch_acc(model, self.args.batch_size, self.vaild_data,
+                    json_datas, sketch_acc, acc = utils.epoch_acc(model, self.args.batch_size, self.valid_data,
                                                                   self.tables,
                                                                   beam_size=self.args.beam_size)
-                    acc = utils.eval_acc(json_datas, self.vaild_data)
+                    acc = utils.eval_acc(json_datas, self.valid_data)
 
                     if acc > best_dev_acc:
                         utils.save_checkpoint(model, os.path.join(model_save_path, 'best_model.model'))
@@ -121,9 +121,9 @@ class Main(object):
             print(tb)
         else:
             utils.save_checkpoint(model, os.path.join(model_save_path, 'end_model.model'))
-            json_datas, sketch_acc, acc = utils.epoch_acc(model, self.args.batch_size, self.vaild_data, self.tables,
+            json_datas, sketch_acc, acc = utils.epoch_acc(model, self.args.batch_size, self.valid_data, self.tables,
                                                           beam_size=self.args.beam_size)
-            acc = utils.eval_acc(json_datas, self.vaild_data)
+            acc = utils.eval_acc(json_datas, self.valid_data)
 
             print("Sketch Acc: %f, Acc: %f, Beam Acc: %f" % (sketch_acc, acc, acc,))
 
