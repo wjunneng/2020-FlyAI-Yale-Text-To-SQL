@@ -74,6 +74,12 @@ class Main(FlyAI):
         """
         grammar = semQL.Grammar()
         model = IRNet(args, grammar)
+        # 训练集
+        self.train_data = Sample.generate_sample_std(input_data=self.train_data, table_data=self.tables,
+                                                     input_contrast_question=args.contrast_question_json_path)
+        # 测试集
+        self.valid_data = Sample.generate_sample_std(input_data=self.valid_data, table_data=self.tables,
+                                                     input_contrast_question=args.contrast_question_json_path)
 
         if args.cuda:
             model.cuda(DEVICE)
@@ -82,7 +88,8 @@ class Main(FlyAI):
         optimizer_cls = eval('torch.optim.%s' % args.optimizer)
         optimizer = optimizer_cls(model.parameters(), lr=args.lr)
         if args.lr_scheduler:
-            scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[21, 41],
+            scheduler = optim.lr_scheduler.MultiStepLR(optimizer,
+                                                       milestones=[21, 41],
                                                        gamma=args.lr_scheduler_gammar)
         else:
             scheduler = None
@@ -154,6 +161,7 @@ class Main(FlyAI):
         # 加载数据
         data = pd.read_csv(args.test_csv_path, encoding='utf-8')
         data = Sample.generate_sample_std(input_data=data,
+                                          table_data=self.tables,
                                           input_contrast_question=args.contrast_question_json_path)
         print('=*=数据处理完成=*=')
         grammar = semQL.Grammar()
@@ -196,6 +204,10 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--BATCH", default=32, type=int, help="batch size")
     args.epoch = parser.parse_args().EPOCHS
     args.batch_size = parser.parse_args().BATCH
+
+    args.project_dir = os.path.abspath('.')
+    args.data_yan_dir = os.path.join(args.project_dir, 'data_yan')
+    args.contrast_question_json_path = os.path.join(args.data_yan_dir, 'contrast_question.json')
 
     main = Main()
     main.download_data()
