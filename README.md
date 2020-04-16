@@ -27,3 +27,56 @@
     # 测试集 忽略了: 409 条样本
     score: 78.6488
     
+
+## Flyai
+
+    sql_data:
+    
+    1. question            'For what year is the SAR no. 874?'
+    2. question_tok        ['for', 'what', 'year', 'is', 'the', 'sar', 'no.', '874', '?']
+    3. question_tok_space  [' ', ' ', ' ', ' ', ' ', ' ', ' ', '', '']
+    4. query               'SELECT year WHERE sar no. EQL 874'
+    6. query_tok           ['SELECT', 'year', 'WHERE', 'sar', 'no', '.', 'EQL', '874']
+    7. query_tok_space     [' ', ' ', ' ', ' ', '', ' ', ' ', '']
+    8. table_id            '1-29753553-1'
+    9. phase               1
+    10.sql                 {'agg': 0, 'sel': 2, 'conds': [[0, 0, 874]]}
+    
+    tables:
+    1.header_tok           [['sar', 'no', '.'], ['builder'], ['year'], ['works', 'no', '.'], ['firebox'], ['driver', 'diameter']]
+    2.rows                 [[843, 'Baldwin', 1929, 60820, 'Narrow', '63"/1600mm'], [844, 'Baldwin', 1929, 60821, 'Narrow', '60"/1520mm'], [845, 'Baldwin', 1929, 60822, 'Narrow', '60"/1520mm'], [846, 'Baldwin', 1929, 60823, 'Narrow', '63"/1600mm'], [847, 'Baldwin', 1929, 60824, 'Narrow', '60"/1520mm'], [848, 'Baldwin', 1929, 60825, 'Narrow', '63"/1600mm'], [849, 'Baldwin', 1929, 60826, 'Narrow', '60"/1520mm'], [850, 'Baldwin', 1929, 60827, 'Narrow', '60"/1520mm'], [868, 'Hohenzollern', 1928, 4653, 'Narrow', '63"/1600mm'], [869, 'Hohenzollern', 1928, 4654, 'Narrow', '63"/1600mm'], [870, 'Hohenzollern', 1928, 4655, 'Narrow', '60"/1520mm'], [871, 'Hohenzollern', 1928, 4656, 'Narrow', '60"/1520mm'], [872, 'Hohenzollern', 1928, 4657, 'Narrow', '60"/1520mm'], [873, 'Hohenzollern', 1928, 4658, 'Narrow', '63"/1600mm'], [874, 'Henschel', 1930, 21749, 'Wide', '63"/1600mm'], [875, 'Henschel', 1930, 21750, 'Wide', '63"/1600mm'], [876, 'Henschel', 1930, 21751, 'Wide', '60"/1520mm'], [877, 'Henschel', 1930, 21752, 'Wide', '60"/1520mm'], [878, 'Henschel', 1930, 21753, 'Wide', '63"/1600mm']]
+    3.page_title           'South African Class 16DA 4-6-2'
+    4.name                 'table_29753553_1'
+    5.caption              'Class 16DA 4-6-2 Builders, Works Numbers & Variations'
+    6.section_title        'Modification'
+    7.header               ['SAR No.', 'Builder', 'Year', 'Works No.', 'Firebox', 'Driver Diameter']
+    8.header_tok_space     [[' ', '', ''], [''], [''], [' ', '', ''], [''], [' ', '']]
+    9.id                   '1-29753553-1'
+    10.types               ['real', 'text', 'real', 'real', 'text', 'text']
+    
+## 说明：
+    
+    {
+       "phase":1,
+       "question":"who is the manufacturer for the order year 1998?",
+       "sql":{
+          "conds":[
+             [
+                0,
+                0,
+                "1998"
+             ]
+          ],
+          "sel":1,
+          "agg":0
+       },
+       "table_id":"1-10007452-3"
+    }
+    
+    question 是自然语言问题
+    table_id 是与这个这个问题相关的表格编号
+    sql      字段是标签数据。这个数据集进一步把 SQL 语句结构化（简化），分成了conds，sel，agg三个部分。
+    sel      是查询目标列，其值是表格中对应列的序号
+    agg      的值是聚合操作的编号，可能出现的聚合操作有['', 'MAX', 'MIN', 'COUNT', 'SUM', 'AVG']共 6 种。
+    conds    是筛选条件，可以有多个。每个条件用一个三元组(column_index, operator_index, condition)表示，可能的operator_index共有['=', '>', '<', 'OP']四种，condition是操作的目标值，这是不能用分类解决的目标。
+    

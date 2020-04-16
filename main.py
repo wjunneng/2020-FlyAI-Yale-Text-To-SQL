@@ -65,6 +65,10 @@ class Main(FlyAI):
         # 划分训练集、测试集
         self.train_data, self.valid_data = train_test_split(sql_data, test_size=0.2, random_state=6, shuffle=True)
 
+        self.train_data = pd.DataFrame(self.train_data)
+        self.valid_data = pd.DataFrame(self.valid_data)
+        self.tables = pd.DataFrame(self.tables)
+
         print('=*=数据处理完成=*=')
 
     def train(self):
@@ -75,11 +79,9 @@ class Main(FlyAI):
         grammar = semQL.Grammar()
         model = IRNet(args, grammar)
         # 训练集
-        self.train_data = Sample.generate_sample_std(input_data=self.train_data, table_data=self.tables,
-                                                     input_contrast_question=args.contrast_question_json_path)
+        self.train_data = Sample.generate_sample(input_data=self.train_data, input_tables=self.tables)
         # 测试集
-        self.valid_data = Sample.generate_sample_std(input_data=self.valid_data, table_data=self.tables,
-                                                     input_contrast_question=args.contrast_question_json_path)
+        self.valid_data = Sample.generate_sample(input_data=self.valid_data, input_tables=self.tables)
 
         if args.cuda:
             model.cuda(DEVICE)
@@ -161,7 +163,6 @@ class Main(FlyAI):
         # 加载数据
         data = pd.read_csv(args.test_csv_path, encoding='utf-8')
         data = Sample.generate_sample_std(input_data=data,
-                                          table_data=self.tables,
                                           input_contrast_question=args.contrast_question_json_path)
         print('=*=数据处理完成=*=')
         grammar = semQL.Grammar()
@@ -200,17 +201,29 @@ if __name__ == '__main__':
 
     # 项目的超参，不使用可以删除
     parser = argparse.ArgumentParser()
-    parser.add_argument("-e", "--EPOCHS", default=3, type=int, help="train epochs")
-    parser.add_argument("-b", "--BATCH", default=32, type=int, help="batch size")
+    parser.add_argument("-e", "--EPOCHS", default=10, type=int, help="train epochs")
+    parser.add_argument("-b", "--BATCH", default=128, type=int, help="batch size")
     args.epoch = parser.parse_args().EPOCHS
     args.batch_size = parser.parse_args().BATCH
+    args.cuda = True
+    args.loss_epoch_threshold = 50
+    args.sketch_loss_coefficient = 1.0
+    args.beam_size = 1
+    args.seed = 90
+    args.embed_size = 300
+    args.sentence_features = True
+    args.column_pointer = True
+    args.hidden_size = 300
+    args.lr_scheduler = True
+    args.lr_scheduler_gammar = 0.5
+    args.att_vec_size = 300
 
     args.project_dir = os.path.abspath('.')
     args.data_yan_dir = os.path.join(args.project_dir, 'data_yan')
     args.contrast_question_json_path = os.path.join(args.data_yan_dir, 'contrast_question.json')
 
     main = Main()
-    main.download_data()
+    # main.download_data()
     main.deal_with_data()
     main.train()
 

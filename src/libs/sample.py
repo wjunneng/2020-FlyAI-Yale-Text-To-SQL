@@ -319,69 +319,59 @@ class Sample(object):
     @staticmethod
     def generate_sample(input_data, input_tables):
         result = []
-        count = 0
         for index in range(input_data.shape[0]):
             # print('\nindex: {}'.format(index))
             sample = dict()
             # eg.'program_share'
-            db_id = input_data.iloc[index, 0]
+            db_id = input_data.iloc[index, input_data.columns.tolist().index('table_id')]
             # eg.'what is the number of different channel owners?'
-            question = input_data.iloc[index, 1]
+            question = input_data.iloc[index, input_data.columns.tolist().index('question')]
             # eg.'select count(distinct owner) from channel'
-            # query = input_data.iloc[index, 2]
+            query = input_data.iloc[index, input_data.columns.tolist().index('query')]
             # table
-            table = input_tables[db_id]
+            table = dict(zip(input_tables[input_tables['id'] == db_id].columns,
+                             input_tables[input_tables['id'] == db_id].values[0]))
 
             # ################## db_id, query, question, question_toks, question_arg, tabel_names
             sample['db_id'] = db_id
             sample['question'] = question
             sample['question_toks'] = re.findall(r"[\w']+|[.,!?;']", question.lower())
             sample['question_arg'] = [[i.lower()] for i in sample['question_toks']]
-            sample['table_names'] = table['table_names_original']
+            sample['table_names'] = table['name']
 
-            # # ################## query 待优化 存在 "count ( t4.paperid )" 的情况
-            # query_list = query.strip(';').split(' ')
-            # while '' in query_list:
-            #     query_list.remove('')
-            # sample['query'] = query
-            #
-            # # ################## col_set
-            # col_set = []
-            # for i in table['column_names_original']:
-            #     if i[1] not in col_set:
-            #         col_set.append(i[1])
-            # sample['col_set'] = col_set
-            #
-            # # ################## question_arg_type 待优化
-            # tmp = []
-            # for char in sample['question_arg']:
-            #     char = char[0]
-            #     if char == query_list[query_list.index('from') + 1]:
-            #         tmp.append(['table'])
-            #     else:
-            #         tmp.append(['NONE'])
-            # sample['question_arg_type'] = tmp
-            # assert len(sample['question_arg']) == len(sample['question_arg_type'])
-            #
-            # # ################## rule_table
-            # # with open(os.path.join(args.data_path, 'contrast_question.json'), mode='r', encoding='utf-8') as file:
-            # #     contrast = json.load(file)
-            # #
-            # # if sample['question'] in contrast:
-            # #     # print('query->rule_table: {}'.format(query))
-            # #     # sample['rule_label'] = contrast[sample['question']][-1].strip()
-            # #     continue
-            # # else:
-            # count += 1
-            # sample['rule_label'] = Sample.generate_rule_label(query=query, query_list=query_list, col_set=col_set,
-            #                                                 table_names=sample['table_names'])
+            # ################## query 待优化 存在 "count ( t4.paperid )" 的情况
+            query_list = query.strip(';').split(' ')
+            while '' in query_list:
+                query_list.remove('')
+            sample['query'] = query
+
+            # ################## col_set
+            col_set = []
+            for i in table['column_names_original']:
+                if i[1] not in col_set:
+                    col_set.append(i[1])
+            sample['col_set'] = col_set
+
+            # ################## question_arg_type 待优化
+            tmp = []
+            for char in sample['question_arg']:
+                char = char[0]
+                if char == query_list[query_list.index('from') + 1]:
+                    tmp.append(['table'])
+                else:
+                    tmp.append(['NONE'])
+            sample['question_arg_type'] = tmp
+            assert len(sample['question_arg']) == len(sample['question_arg_type'])
+
+            # ################## rule_table
+            sample['rule_label'] = Sample.generate_rule_label(query=query, query_list=query_list, col_set=col_set,
+                                                              table_names=sample['table_names'])
             result.append(sample)
 
-        print(count)
         return result
 
     @staticmethod
-    def generate_sample_std(input_data, table_data, input_contrast_question):
+    def generate_sample_std(input_data, input_contrast_question):
         result = []
 
         with open(file=input_contrast_question, encoding='utf-8', mode='r') as file:

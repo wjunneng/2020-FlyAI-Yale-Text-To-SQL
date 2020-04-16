@@ -1,5 +1,7 @@
 flyai
-tqdm=4.44.1
-nltk==3.4.5
-torch==1.4.0
+torch==1.4.0a
 torchvision==0.4.0
+records==0.5.3
+babel==2.8.0
+stanza==1.0.0
+matplotlib==2.2.3
