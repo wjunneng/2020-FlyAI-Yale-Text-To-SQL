@@ -4,7 +4,7 @@
 
 # aggregator:agg | selection:sel | where:conds
 
-## AI研习社
+# AI研习社
 
     原始：
     # 忽略db_id不匹配的样本 if sample['db_id'] != db_id:
@@ -27,8 +27,62 @@
     # 测试集 忽略了: 409 条样本
     score: 78.6488
     
+## 数据说明
 
-## Flyai
+    {
+        "column_names": [
+            [
+                -1,
+                "*"
+            ],
+            ...
+            [
+                1,
+                "home town"
+            ]
+        ],
+        "column_names_original": [
+            [
+                -1,
+                "*"
+            ],
+            ...
+            [
+                1,
+                "home town"
+            ]
+        ],
+        "column_types": [
+            "text",
+            "number",
+            ...
+            "number",
+            "text"
+        ],
+        "db_id": "perpetrator",
+        "foreign_keys": [
+            [
+                2,
+                9
+            ]
+        ],
+        "primary_keys": [
+            1,
+            9
+        ],
+        "table_names": [
+            "perpetrator",
+            "people"
+        ],
+        "table_names_original": [
+            "perpetrator",
+            "people"
+        ]
+    },
+    
+    
+
+# Flyai
 
     sql_data:
     

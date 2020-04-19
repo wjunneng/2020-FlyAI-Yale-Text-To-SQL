@@ -395,16 +395,6 @@ class Sample(object):
                 # 注意是否要转成小写的
                 sample['question'] = sample['question'].lower()
 
-                # 忽略db_id不匹配的样本
-                # if sample['db_id'] != db_id:
-                #     count += 1
-                #     continue
-
-                # 忽略db_id不存在的样本
-                # if sample['db_id'] not in table_data:
-                #     count += 1
-                #     continue
-
                 sample['db_id'] = db_id
 
                 result.append(sample)

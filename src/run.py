@@ -45,11 +45,11 @@ class Main(object):
         # 划分训练集、测试集
         train_data, valid_data = train_test_split(data, test_size=0.2, random_state=6, shuffle=True)
         # 训练集
-        self.train_data, self.tables = Sample.generate_sample_std(input_data=train_data, table_data=self.tables,
-                                                     input_contrast_question=self.args.contrast_question_json_path)
+        self.train_data, self.tables = Sample.generate_sample_std(input_data=train_data,
+                                                                  input_contrast_question=self.args.contrast_question_json_path)
         # 测试集
-        self.valid_data, _ = Sample.generate_sample_std(input_data=valid_data, table_data=self.tables,
-                                                     input_contrast_question=self.args.contrast_question_json_path)
+        self.valid_data, _ = Sample.generate_sample_std(input_data=valid_data,
+                                                        input_contrast_question=self.args.contrast_question_json_path)
         print('=*=数据处理完成=*=')
         self.args.load_model = self.args.pretrained_model
 
@@ -202,6 +202,6 @@ if __name__ == '__main__':
     args.load_model = os.path.join(args.save, 'best_model.model')
 
     main = Main(args=args)
-    # main.train()
+    main.train()
 
     main.evaluate()
