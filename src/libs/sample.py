@@ -374,8 +374,26 @@ class Sample(object):
     def generate_sample_std(input_data, input_contrast_question):
         result = []
 
-        with open(file=input_contrast_question, encoding='utf-8', mode='r') as file:
-            contrast = json.load(fp=file)
+        # with open(file=input_contrast_question, encoding='utf-8', mode='r') as file:
+        #     contrast = json.load(fp=file)
+
+        contrast = {}
+        with open('../data_yan/dev_sql2semql.json', 'r') as dev_file, open(
+                '../data_yan/train_others_sql2semql.json', 'r') as train_other_file, open(
+            '../data_yan/train_spider_sql2semql.json', 'r') as train_spider_file:
+
+            dev_data = json.load(dev_file)
+            dev_dict = dict(zip([i['question'].lower() for i in dev_data], dev_data))
+
+            train_other_data = json.load(train_other_file)
+            train_other_dict = dict(zip([i['question'].lower() for i in train_other_data], train_other_data))
+
+            train_spider_data = json.load(train_spider_file)
+            train_spider_dict = dict(zip([i['question'].lower() for i in train_spider_data], train_spider_data))
+
+            contrast.update(dev_dict)
+            contrast.update(train_other_dict)
+            contrast.update(train_spider_dict)
 
         count = 0
         for index in range(input_data.shape[0]):
@@ -387,10 +405,16 @@ class Sample(object):
             question = input_data.iloc[index, 1]
 
             if question in contrast:
+                # sample['db_id'], sample['question'], sample['question_toks'], sample['question_arg'], sample[
+                #     'question_arg_type'], sample['query'], sample['table_names'], sample['col_set'], sample[
+                #     'rule_label'] = contrast[question]
                 sample['db_id'], sample['question'], sample['question_toks'], sample['question_arg'], sample[
                     'question_arg_type'], sample['query'], sample['table_names'], sample['col_set'], sample[
-                    'rule_label'] = \
-                    contrast[question]
+                    'rule_label'] = contrast[question]['db_id'], contrast[question]['question'], contrast[question][
+                    'question_toks'], contrast[question]['question_arg'], contrast[question][
+                                        'question_arg_type'], contrast[question]['query'], contrast[question][
+                                        'table_names'], contrast[question]['col_set'], contrast[question][
+                                        'rule_label']
 
                 # 注意是否要转成小写的
                 sample['question'] = sample['question'].lower()

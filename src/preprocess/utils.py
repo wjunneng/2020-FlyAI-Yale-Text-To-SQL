@@ -8,7 +8,7 @@
 # @File    : utils.py
 # @Software: PyCharm
 """
-import re
+import copy
 import json
 from pattern.text.en import lemma
 from nltk.stem import WordNetLemmatizer
@@ -45,6 +45,12 @@ def load_dataSets(args):
         output_tab[db_name] = temp
         tables[db_name] = table
 
+    datas_after = []
+    for data in datas:
+        if data['db_id'] in tables:
+            datas_after.append(data)
+    datas = copy.deepcopy(datas_after)
+
     for d in datas:
         d['names'] = tables[d['db_id']]['schema_content']
         d['table_names'] = tables[d['db_id']]['table_names']
@@ -57,6 +63,7 @@ def load_dataSets(args):
         for id_k in tables[d['db_id']]['primary_keys']:
             keys[id_k] = id_k
         d['keys'] = keys
+
     return datas, tables
 
 
@@ -231,7 +238,6 @@ def generate_json():
 
     with open('../../data_yan/train.json', 'w') as file:
         json.dump(obj=train_json_data, fp=file)
-
 
 # if __name__ == '__main__':
 #     generate_json()

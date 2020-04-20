@@ -22,7 +22,7 @@ sys.path.append("..")
 from src.libs.semQL import Root1, Root, N, A, C, T, Sel, Sup, Filter, Order
 
 
-class Parser:
+class Parser(object):
     def __init__(self):
         self.copy_selec = None
         self.sel_result = []
@@ -376,8 +376,17 @@ if __name__ == '__main__':
     args = arg_parser.parse_args()
 
     # irnet dev
-    args.data_path = '../../data_yan/input/dev.json'
-    args.output_path = '../../data_yan/dev_sql2semql.json'
+    # args.data_path = '../../data_yan/input/dev.json'
+    # args.output_path = '../../data_yan/dev_sql2semql.json'
+
+    # irnet train others
+    # args.data_path = '../../data_yan/input/train_others.json'
+    # args.output_path = '../../data_yan/train_others_sql2semql.json'
+
+    # irnet train spider
+    # args.data_path = '../../data_yan/input/train_spider.json'
+    # args.output_path = '../../data_yan/train_spider_sql2semql.json'
+
     args.table_path = '../../data_yan/input/tables.json'
     args.conceptNet = '../../data_yan/'
 
@@ -404,5 +413,5 @@ if __name__ == '__main__':
         processed_data.append(datas[i])
 
     print('Finished %s datas and failed %s datas' % (len(processed_data), len(datas) - len(processed_data)))
-    with open(args.data_path, 'w', encoding='utf8') as f:
+    with open(args.output_path, 'w', encoding='utf8') as f:
         f.write(json.dumps(processed_data))
